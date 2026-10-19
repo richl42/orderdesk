@@ -1,0 +1,15 @@
+<div class="page-head">
+  <div>
+    <div class="breadcrumb"><a href="/">Clients</a> / {{ client.name }}</div>
+    <div class="title-row" style="margin-top: 6px">
+      <h1>{{ client.name }}</h1>
+      <span class="pill pill-mode-{{ summary.mode_key }}">{{ summary.mode_label }}{% if summary.trial_day and summary.trial_day <= client.trial_working_days %} · day {{ summary.trial_day }} of {{ client.trial_working_days }}{% endif %}</span>
+    </div>
+    <p class="lede">{% if client.erp_system %}{{ client.erp_system }} · {% endif %}{{ summary.facts }}{% if summary.output_file %} · Output: <span class="mono">{{ summary.output_file }}</span>{% endif %}</p>
+  </div>
+  <nav class="tabs" aria-label="Client sections">
+    <a href="/clients/{{ client.id }}/orders" {% if tab == "orders" %}aria-current="page"{% endif %}>Orders</a>
+    <a href="/clients/{{ client.id }}/trial" {% if tab == "trial" %}aria-current="page"{% endif %}>Trial results</a>
+    <a href="/clients/new?client={{ client.id }}" {% if tab == "settings" %}aria-current="page"{% endif %}>Settings</a>
+  </nav>
+</div>

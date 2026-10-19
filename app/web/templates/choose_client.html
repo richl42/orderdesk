@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · Order Desk{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ title }}</h1>
+    <p class="lede">{{ intro }}</p>
+  </div>
+</div>
+<section class="card">
+  {% if clients %}
+  <ul class="plain-list">
+    {% for c in clients %}
+    <li>
+      <span><strong>{{ c.name }}</strong>{% if c.erp_system %} <span class="muted small">· {{ c.erp_system }}</span>{% endif %}</span>
+      <a class="btn btn-secondary" href="/clients/{{ c.id }}/{{ suffix }}">Open</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">No clients yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

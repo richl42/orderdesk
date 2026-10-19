@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Order Desk: clients</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F6F6F4}
+a{color:#23408E}a:hover{color:#1A2F69}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F6F6F4; color: #1C1C1A; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 12px 32px; background: #FFFFFF; border-bottom: 1px solid #DADAD6">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div aria-hidden="true" style="width: 30px; height: 30px; border-radius: 7px; background: #1C1C1A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">OD</div>
+      <span style="font-weight: 600; font-size: 16px">Order Desk</span>
+      <span style="font-size: 12px; color: #45453F; border: 1px solid #DADAD6; border-radius: 999px; padding: 1px 9px">Internal</span>
+    </div>
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px">
+      <a href="Main.dc.html" aria-current="page" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; background: #EDEDEA; color: #1C1C1A; text-decoration: none; font-weight: 500">Clients</a>
+      <a href="Orders.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Orders</a>
+      <a href="Trial.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Trials</a>
+      <a href="Setup.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Add client</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 8px; color: #45453F; font-size: 14px">
+      <div aria-hidden="true" style="width: 30px; height: 30px; border-radius: 999px; background: #E6ECF8; color: #23408E; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">R</div>
+      Rich
+    </div>
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 28px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 600">Clients</h1>
+          <span style="font-size: 12px; color: #7A4A00; background: #FBEFD9; border-radius: 999px; padding: 2px 10px">Sample data</span>
+        </div>
+        <p style="margin: 4px 0 0; color: #5C5C57">Every wholesaler you process orders for. Each one has its own catalogue, customer list and output format.</p>
+      </div>
+      <a href="Setup.dc.html" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 8px; background: #23408E; color: #FFFFFF; text-decoration: none; font-weight: 500">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
+        Add client
+      </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
+      <sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
+        <div style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px">
+          <div style="font-size: 13px; color: #5C5C57">{{s.label}}</div>
+          <div style="font-size: 30px; font-weight: 600; line-height: 1.2">{{s.value}}</div>
+          <div style="font-size: 13px; color: #5C5C57">{{s.note}}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <section style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; overflow: hidden">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #E6E6E2">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 600">Needs your attention</h2>
+        <span style="font-size: 13px; color: #5C5C57">Anything the system was not sure about, across all clients</span>
+      </div>
+      <sc-for list="{{attention}}" as="a" hint-placeholder-count="4">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 14px 20px; border-bottom: 1px solid #EFEFEC">
+          <span style="{{a.tagStyle}}">{{a.tag}}</span>
+          <div style="flex: 1 1 320px; min-width: 0">
+            <div style="font-weight: 500">{{a.issue}}</div>
+            <div style="font-size: 13px; color: #5C5C57">{{a.client}} · {{a.order}}</div>
+          </div>
+          <a href="Review.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; text-decoration: none; font-weight: 500">Review</a>
+        </div>
+      </sc-for>
+    </section>
+
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 17px; font-weight: 600">Your clients</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px">
+        <sc-for list="{{clients}}" as="c" hint-placeholder-count="4">
+          <div style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+              <div style="min-width: 0">
+                <div style="font-weight: 600; font-size: 17px">{{c.name}}</div>
+                <div style="color: #5C5C57; font-size: 13px">{{c.meta}}</div>
+              </div>
+              <span style="{{c.badgeStyle}}">{{c.badge}}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px; background: #F6F6F4; border-radius: 8px">
+              <div><div style="font-size: 12px; color: #5C5C57">Orders today</div><div style="font-weight: 600; font-size: 18px">{{c.today}}</div></div>
+              <div><div style="font-size: 12px; color: #5C5C57">To review</div><div style="font-weight: 600; font-size: 18px">{{c.review}}</div></div>
+              <div><div style="font-size: 12px; color: #5C5C57">Exactly right</div><div style="font-weight: 600; font-size: 18px">{{c.acc}}</div></div>
+            </div>
+            <div style="font-size: 13px; color: #45453F">{{c.foot}}</div>
+            <a href="{{c.link}}" style="display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; text-decoration: none; font-weight: 500">{{c.cta}}</a>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var pill = function (bg, fg) {
+      return 'display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px; background: ' + bg + '; color: ' + fg;
+    };
+    var tones = {
+      'Problem': pill('#F9E3E3', '#9B2525'),
+      'Check': pill('#FBEFD9', '#7A4A00'),
+      'Pass on': pill('#EDEDEA', '#45453F'),
+      'Live': pill('#E3F1E7', '#1E6B3A'),
+      'Shadow trial': pill('#E6ECF8', '#23408E'),
+      'Setting up': pill('#FBEFD9', '#7A4A00'),
+      'Demo': pill('#EDEDEA', '#45453F')
+    };
+    var attention = [
+      { tag: 'Problem', issue: 'Unknown product: "blue roll 2ply"', client: 'ABC Cleaning Supplies', order: 'PO 2291 from Riverside Hotel' },
+      { tag: 'Check', issue: 'Price differs from price list (£39.50 written, £42.00 on list)', client: 'ABC Cleaning Supplies', order: 'PO 2295 from Mill Lane Café' },
+      { tag: 'Check', issue: 'Possible duplicate of PO 88101 sent 20 minutes earlier', client: 'Kestrel Packaging', order: 'PO 88104 from Brightside Retail' },
+      { tag: 'Pass on', issue: 'Not an order: delivery chase, forward to client contact', client: 'Kestrel Packaging', order: 'Email from Greenleaf Deli' }
+    ];
+    var clients = [
+      { name: 'ABC Cleaning Supplies', meta: 'Sage 200 · Contact: operations manager', badge: 'Shadow trial', today: '24', review: '6', acc: '96.6%', foot: 'Day 6 of 10 working days · Orders forwarded automatically', cta: 'Open orders', link: 'Orders.dc.html' },
+      { name: 'Kestrel Packaging', meta: 'Unleashed · Contact: sales office manager', badge: 'Live', today: '78', review: '3', acc: '98.9%', foot: '£1,000 a month · Approved orders sent daily at 16:00', cta: 'Open orders', link: 'Orders.dc.html' },
+      { name: 'Northside Plumbing Supply', meta: 'Pegasus Opera · Contact: managing director', badge: 'Setting up', today: '0', review: '0', acc: 'n/a', foot: 'Setup: 3 of 5 steps done (output format missing)', cta: 'Continue setup', link: 'Setup.dc.html' },
+      { name: 'Demo: cleaning supplies', meta: 'Fictional data · used when pitching', badge: 'Demo', today: 'n/a', review: '0', acc: '95%', foot: '20 test orders with answer keys · 19 exactly right', cta: 'Open demo', link: 'Orders.dc.html' }
+    ];
+    return {
+      stats: [
+        { label: 'Orders in today', value: '102', note: 'Across 2 active clients' },
+        { label: 'Waiting for your review', value: '9', note: 'Oldest arrived 12 minutes ago' },
+        { label: 'Exactly right, last 7 days', value: '97.8%', note: 'Checked against what staff entered' },
+        { label: 'Your review time per order', value: '41s', note: 'Average, last 7 days' }
+      ],
+      attention: attention.map(function (a) { return Object.assign({}, a, { tagStyle: tones[a.tag] }); }),
+      clients: clients.map(function (c) { return Object.assign({}, c, { badgeStyle: tones[c.badge] }); })
+    };
+  }
+}
+</script>
+</body>
+</html>

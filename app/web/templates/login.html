@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in · Order Desk</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<main class="login-wrap">
+  <form class="card login-card" method="post" action="/login">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">OD</span>
+      <span class="brand-name">Order Desk</span>
+      <span class="tag">Internal</span>
+    </div>
+    <h1 style="font-size: 22px">Log in</h1>
+    {% if no_password %}
+      <p class="notice notice-check">No password is set yet. Add a line <span class="mono">APP_PASSWORD=...</span> to the .env file in the Order Desk folder, then restart the app.</p>
+    {% endif %}
+    {% if error %}<p class="notice notice-problem" role="alert">{{ error }}</p>{% endif %}
+    <label class="field">Password
+      <input type="password" name="password" autocomplete="current-password" required autofocus>
+    </label>
+    <button class="btn btn-primary" type="submit">Log in</button>
+  </form>
+</main>
+</body>
+</html>

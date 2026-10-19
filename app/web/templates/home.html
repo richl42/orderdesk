@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Clients · Order Desk{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Clients</h1>
+    <p class="lede">Every wholesaler you process orders for. Each one has its own catalogue, customer list and output format.</p>
+  </div>
+  <a class="btn btn-primary" href="/clients/new">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
+    Add client
+  </a>
+</div>
+
+<div class="tiles">
+  {% for tile in data.tiles %}
+  <div class="tile">
+    <div class="tile-label">{{ tile.label }}</div>
+    <div class="tile-value">{{ tile.value }}</div>
+    <div class="tile-note">{{ tile.note }}</div>
+  </div>
+  {% endfor %}
+</div>
+<p class="footnote">Demo clients are not included in these totals.</p>
+
+<section class="card" aria-labelledby="attention-title">
+  <div class="card-head">
+    <h2 id="attention-title">Needs your attention</h2>
+    <span class="small muted">Anything the system was not sure about, across all clients</span>
+  </div>
+  {% for item in data.attention %}
+  <div class="attention-row">
+    <span class="pill {{ status_class(item.order.status) }}">{{ status_label(item.order.status) }}</span>
+    <div class="attention-text">
+      <div class="attention-issue">{{ item.issue }}</div>
+      <div class="attention-where">{{ item.client_name }} · {{ item.title }} · arrived {{ item.order.received_at | london("%a %H:%M") }}</div>
+    </div>
+    <a class="btn btn-secondary" href="/orders/{{ item.order.id }}">Review</a>
+  </div>
+  {% else %}
+  <p class="empty">Nothing needs you right now. Orders that need a check, have a problem or need passing on will show here, oldest first.</p>
+  {% endfor %}
+</section>
+
+<section class="section" aria-labelledby="clients-title">
+  <h2 id="clients-title">Your clients</h2>
+  {% if data.clients %}
+  <div class="client-grid">
+    {% for s in data.clients %}
+    <article class="client-card">
+      <div class="client-top">
+        <div style="min-width: 0">
+          <div class="client-name">{{ s.client.name }}</div>
+          <div class="client-meta">{{ s.meta }}</div>
+          <div class="client-meta">{{ s.facts }}</div>
+        </div>
+        <span class="pill pill-mode-{{ s.mode_key }}">{{ s.mode_label }}</span>
+      </div>
+      <div class="client-stats">
+        <div><div class="stat-label">Orders today</div><div class="stat-value">{{ s.orders_today }}</div></div>
+        <div><div class="stat-label">To review</div><div class="stat-value">{{ s.to_review }}</div></div>
+        <div><div class="stat-label">Exactly right</div><div class="stat-value">{{ s.exactly_right }}</div></div>
+      </div>
+      <div class="client-foot">{{ s.foot }}</div>
+      <a class="btn btn-secondary" href="{{ s.cta_href }}">{{ s.cta_label }}</a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card empty">No clients yet. Use <a href="/clients/new">Add client</a> to set up the first one, or run <span class="mono">make seed</span> to load the demo client.</div>
+  {% endif %}
+</section>
+{% endblock %}

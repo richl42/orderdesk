@@ -1,0 +1,15 @@
+# Settings with secrets
+.env
+
+# Database, client files, eval results, backups
+data/
+backups/
+
+# Demo files written by make seed
+seed/demo/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/

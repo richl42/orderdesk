@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Order Desk: add a client</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F6F6F4}
+a{color:#23408E}a:hover{color:#1A2F69}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F6F6F4; color: #1C1C1A; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 12px 32px; background: #FFFFFF; border-bottom: 1px solid #DADAD6">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div aria-hidden="true" style="width: 30px; height: 30px; border-radius: 7px; background: #1C1C1A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">OD</div>
+      <span style="font-weight: 600; font-size: 16px">Order Desk</span>
+      <span style="font-size: 12px; color: #45453F; border: 1px solid #DADAD6; border-radius: 999px; padding: 1px 9px">Internal</span>
+    </div>
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px">
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Clients</a>
+      <a href="Orders.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Orders</a>
+      <a href="Trial.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Trials</a>
+      <a href="Setup.dc.html" aria-current="page" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; background: #EDEDEA; color: #1C1C1A; text-decoration: none; font-weight: 500">Add client</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 8px; color: #45453F; font-size: 14px">
+      <div aria-hidden="true" style="width: 30px; height: 30px; border-radius: 999px; background: #E6ECF8; color: #23408E; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">R</div>
+      Rich
+    </div>
+  </header>
+
+  <main style="max-width: 1040px; margin: 0 auto; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+    <div>
+      <a href="Main.dc.html" style="font-size: 14px; text-decoration: none">Clients</a>
+      <span style="color: #5C5C57; font-size: 14px"> / Add client</span>
+      <h1 style="margin: 6px 0 0; font-size: 28px; font-weight: 600">Add a client</h1>
+      <p style="margin: 4px 0 0; color: #5C5C57">Done once per wholesaler. Upload their three files, check the guesses, save. Every order after this uses these settings automatically.</p>
+    </div>
+
+    <nav aria-label="Setup steps" style="display: flex; flex-wrap: wrap; gap: 8px">
+      <sc-for list="{{steps}}" as="st" hint-placeholder-count="5">
+        <a href="{{st.href}}" style="{{st.style}}">{{st.label}}</a>
+      </sc-for>
+    </nav>
+
+    <section id="details" style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: flex-start; gap: 14px">
+        <div aria-hidden="true" style="flex: none; width: 32px; height: 32px; border-radius: 999px; background: #E3F1E7; color: #1E6B3A; display: flex; align-items: center; justify-content: center; font-weight: 600">1</div>
+        <div style="flex: 1 1 auto">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 600">Client details</h2>
+          <p style="margin: 2px 0 0; color: #5C5C57; font-size: 14px">Who they are and which system their orders end up in.</p>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F">Client name
+          <input type="text" value="ABC Cleaning Supplies" style="min-height: 44px; padding: 0 12px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 15px; color: #1C1C1A; background: #FFFFFF">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F">Their order system
+          <select style="min-height: 44px; padding: 0 12px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 15px; color: #1C1C1A; background: #FFFFFF">
+            <option>Sage 200</option><option>Sage 50</option><option>Unleashed</option><option>Pegasus Opera</option><option>Other</option>
+          </select>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F">Mode
+          <select style="min-height: 44px; padding: 0 12px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 15px; color: #1C1C1A; background: #FFFFFF">
+            <option>Shadow trial (never entered into their system)</option><option>Live service</option><option>Demo</option>
+          </select>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F">Main contact
+          <input type="text" value="[Operations manager name]" style="min-height: 44px; padding: 0 12px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 15px; color: #1C1C1A; background: #FFFFFF">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F">Send problems to
+          <input type="email" value="[contact email]" style="min-height: 44px; padding: 0 12px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 15px; color: #1C1C1A; background: #FFFFFF">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F">Their orders arrive at
+          <input type="text" value="abc.orders@[your domain]" style="min-height: 44px; padding: 0 12px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 15px; color: #1C1C1A; background: #F6F6F4">
+        </label>
+      </div>
+    </section>
+
+    <section id="catalogue" style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: flex-start; gap: 14px">
+        <div aria-hidden="true" style="flex: none; width: 32px; height: 32px; border-radius: 999px; background: #E3F1E7; color: #1E6B3A; display: flex; align-items: center; justify-content: center; font-weight: 600">2</div>
+        <div style="flex: 1 1 auto">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 600">Product catalogue</h2>
+          <p style="margin: 2px 0 0; color: #5C5C57; font-size: 14px">What every order line gets matched against. Excel or CSV.</p>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: #F6F6F4; border: 1px solid #E6E6E2; border-radius: 10px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#45453F" stroke-width="1.6" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path></svg>
+          <div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px">abc_products.xlsx</div><div style="font-size: 13px; color: #5C5C57">412 products found</div></div>
+        </div>
+        <button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; font: inherit; font-weight: 500; cursor: pointer">Replace file</button>
+      </div>
+      <div style="font-size: 14px; font-weight: 500">Check our column guesses</div>
+      <div style="overflow-x: auto; border: 1px solid #E6E6E2; border-radius: 10px">
+        <table style="width: 100%; min-width: 620px; border-collapse: collapse; font-size: 14px">
+          <thead>
+            <tr style="background: #F6F6F4; text-align: left">
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Column in their file</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Example value</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">What it means</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{catalogueMap}}" as="m" hint-placeholder-count="6">
+              <tr style="border-top: 1px solid #EFEFEC">
+                <td style="padding: 8px 14px; font-family: 'IBM Plex Mono', monospace">{{m.col}}</td>
+                <td style="padding: 8px 14px; color: #45453F">{{m.ex}}</td>
+                <td style="padding: 8px 14px">
+                  <select aria-label="Meaning of {{m.col}}" style="min-height: 40px; min-width: 200px; padding: 0 10px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 14px; color: #1C1C1A; background: #FFFFFF">
+                    <option>{{m.means}}</option><option>Product code</option><option>Description</option><option>Unit</option><option>Pack size</option><option>Price</option><option>Ignore this column</option>
+                  </select>
+                </td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="customers" style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: flex-start; gap: 14px">
+        <div aria-hidden="true" style="flex: none; width: 32px; height: 32px; border-radius: 999px; background: #E3F1E7; color: #1E6B3A; display: flex; align-items: center; justify-content: center; font-weight: 600">3</div>
+        <div style="flex: 1 1 auto">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 600">Customer list</h2>
+          <p style="margin: 2px 0 0; color: #5C5C57; font-size: 14px">Lets the system work out who each order is from, and where it is going.</p>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: #F6F6F4; border: 1px solid #E6E6E2; border-radius: 10px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#45453F" stroke-width="1.6" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path></svg>
+          <div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px">abc_customers.csv</div><div style="font-size: 13px; color: #5C5C57">86 customers found</div></div>
+        </div>
+        <button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; font: inherit; font-weight: 500; cursor: pointer">Replace file</button>
+      </div>
+      <div style="font-size: 14px; font-weight: 500">Check our column guesses</div>
+      <div style="overflow-x: auto; border: 1px solid #E6E6E2; border-radius: 10px">
+        <table style="width: 100%; min-width: 620px; border-collapse: collapse; font-size: 14px">
+          <thead>
+            <tr style="background: #F6F6F4; text-align: left">
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Column in their file</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Example value</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">What it means</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{customerMap}}" as="m" hint-placeholder-count="5">
+              <tr style="border-top: 1px solid #EFEFEC">
+                <td style="padding: 8px 14px; font-family: 'IBM Plex Mono', monospace">{{m.col}}</td>
+                <td style="padding: 8px 14px; color: #45453F">{{m.ex}}</td>
+                <td style="padding: 8px 14px">
+                  <select aria-label="Meaning of {{m.col}}" style="min-height: 40px; min-width: 200px; padding: 0 10px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 14px; color: #1C1C1A; background: #FFFFFF">
+                    <option>{{m.means}}</option><option>Account code</option><option>Customer name</option><option>Order email</option><option>Delivery address</option><option>Price list</option><option>Ignore this column</option>
+                  </select>
+                </td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="output" style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: flex-start; gap: 14px">
+        <div aria-hidden="true" style="flex: none; width: 32px; height: 32px; border-radius: 999px; background: #E3F1E7; color: #1E6B3A; display: flex; align-items: center; justify-content: center; font-weight: 600">4</div>
+        <div style="flex: 1 1 auto">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 600">Output format</h2>
+          <p style="margin: 2px 0 0; color: #5C5C57; font-size: 14px">An example of what a finished order looks like in their system. For each of their columns, pick what fills it.</p>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: #F6F6F4; border: 1px solid #E6E6E2; border-radius: 10px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#45453F" stroke-width="1.6" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path></svg>
+          <div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px">SalesOrderImport_example.csv</div><div style="font-size: 13px; color: #5C5C57">8 columns found</div></div>
+        </div>
+        <button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; font: inherit; font-weight: 500; cursor: pointer">Replace file</button>
+      </div>
+      <div style="overflow-x: auto; border: 1px solid #E6E6E2; border-radius: 10px">
+        <table style="width: 100%; min-width: 620px; border-collapse: collapse; font-size: 14px">
+          <thead>
+            <tr style="background: #F6F6F4; text-align: left">
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Their column</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Filled with</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{outputMap}}" as="m" hint-placeholder-count="8">
+              <tr style="border-top: 1px solid #EFEFEC">
+                <td style="padding: 8px 14px; font-family: 'IBM Plex Mono', monospace">{{m.col}}</td>
+                <td style="padding: 8px 14px">
+                  <select aria-label="What fills {{m.col}}" style="min-height: 40px; min-width: 200px; padding: 0 10px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 14px; color: #1C1C1A; background: #FFFFFF">
+                    <option>{{m.fill}}</option><option>Account code</option><option>PO number</option><option>Date received</option><option>Product code</option><option>Quantity</option><option>Price</option><option>Delivery date</option><option>Delivery notes</option><option>Leave blank</option>
+                  </select>
+                </td>
+                <td style="padding: 8px 14px; font-family: 'IBM Plex Mono', monospace; color: #45453F">{{m.ex}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 14px; font-weight: 500">Preview: one line of output in their format</div>
+        <pre style="margin: 0; padding: 14px 16px; background: #1C1C1A; color: #F1F1EE; border-radius: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; white-space: pre">AccountRef,CustOrderNo,OrderDate,StockCode,Qty,UnitPrice,DeliveryDate,Notes
+CUST-018,2291,19/10/2026,SPR-12,10,28.00,22/10/2026,Kitchen entrance</pre>
+      </div>
+    </section>
+
+    <section id="rules" style="background: #FFFFFF; border: 2px solid #23408E; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: flex-start; gap: 14px">
+        <div aria-hidden="true" style="flex: none; width: 32px; height: 32px; border-radius: 999px; background: #23408E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600">5</div>
+        <div style="flex: 1 1 auto">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 600">Rules <span style="font-weight: 400; color: #5C5C57; font-size: 14px">(optional)</span></h2>
+          <p style="margin: 2px 0 0; color: #5C5C57; font-size: 14px">When an order should be flagged instead of marked ready.</p>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F">Order cutoff time
+          <input type="text" value="15:00" style="min-height: 44px; padding: 0 12px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 15px; color: #1C1C1A; background: #FFFFFF">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F">Minimum order value
+          <input type="text" value="£75.00" style="min-height: 44px; padding: 0 12px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 15px; color: #1C1C1A; background: #FFFFFF">
+        </label>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <sc-for list="{{rules}}" as="r" hint-placeholder-count="5">
+          <label style="display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 15px">
+            <sc-if value="{{r.on}}" hint-placeholder-val="{{true}}">
+              <input type="checkbox" checked="checked" style="width: 20px; height: 20px; accent-color: #23408E">
+            </sc-if>
+            <sc-if value="{{r.off}}" hint-placeholder-val="{{false}}">
+              <input type="checkbox" style="width: 20px; height: 20px; accent-color: #23408E">
+            </sc-if>
+            {{r.text}}
+          </label>
+        </sc-for>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; padding-bottom: 16px">
+      <a href="Review.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; text-decoration: none; font-weight: 500">Test with a past order</a>
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 8px; background: #23408E; color: #FFFFFF; text-decoration: none; font-weight: 500">Save client</a>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var base = 'display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; text-decoration: none; font-size: 14px; ';
+    var done = base + 'background: #E3F1E7; color: #1E6B3A;';
+    var now = base + 'background: #23408E; color: #FFFFFF; font-weight: 500;';
+    return {
+      steps: [
+        { label: '1 Details ✓', href: '#details', style: done },
+        { label: '2 Catalogue ✓', href: '#catalogue', style: done },
+        { label: '3 Customers ✓', href: '#customers', style: done },
+        { label: '4 Output format ✓', href: '#output', style: done },
+        { label: '5 Rules', href: '#rules', style: now }
+      ],
+      catalogueMap: [
+        { col: 'Stock Code', ex: 'SPR-12', means: 'Product code' },
+        { col: 'Description', ex: 'Antibacterial spray 750ml', means: 'Description' },
+        { col: 'UOM', ex: 'CASE', means: 'Unit' },
+        { col: 'Pack Qty', ex: '12', means: 'Pack size' },
+        { col: 'Sell Price', ex: '28.00', means: 'Price' },
+        { col: 'Barcode', ex: '5012345678900', means: 'Ignore this column' }
+      ],
+      customerMap: [
+        { col: 'Acc Ref', ex: 'CUST-018', means: 'Account code' },
+        { col: 'Company', ex: 'Riverside Hotel', means: 'Customer name' },
+        { col: 'Email', ex: 'purchasing@riversidehotel.co.uk', means: 'Order email' },
+        { col: 'Del Addr 1', ex: '14 River Walk', means: 'Delivery address' },
+        { col: 'Price Band', ex: 'B', means: 'Price list' }
+      ],
+      outputMap: [
+        { col: 'AccountRef', fill: 'Account code', ex: 'CUST-018' },
+        { col: 'CustOrderNo', fill: 'PO number', ex: '2291' },
+        { col: 'OrderDate', fill: 'Date received', ex: '19/10/2026' },
+        { col: 'StockCode', fill: 'Product code', ex: 'SPR-12' },
+        { col: 'Qty', fill: 'Quantity', ex: '10' },
+        { col: 'UnitPrice', fill: 'Price', ex: '28.00' },
+        { col: 'DeliveryDate', fill: 'Delivery date', ex: '22/10/2026' },
+        { col: 'Notes', fill: 'Delivery notes', ex: 'Kitchen entrance' }
+      ],
+      rules: [
+        { text: 'Flag any price that differs from their price list', on: true, off: false },
+        { text: 'Flag possible duplicates of orders from the last 7 days', on: true, off: false },
+        { text: 'Convert units using pack sizes (for example, 120 bottles into 10 cases)', on: true, off: false },
+        { text: 'Flag orders under the minimum order value', on: true, off: false },
+        { text: 'Allow substitutions without asking the client', on: false, off: true }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

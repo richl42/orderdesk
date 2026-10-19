@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Order Desk{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/app.css">
+<script src="/static/js/htmx.min.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark" aria-hidden="true">OD</span>
+    <span class="brand-name">Order Desk</span>
+    <span class="tag">Internal</span>
+  </a>
+  <nav class="mainnav" aria-label="Main">
+    <a href="/" {% if nav == "clients" %}aria-current="page"{% endif %}>Clients</a>
+    <a href="/orders" {% if nav == "orders" %}aria-current="page"{% endif %}>Orders</a>
+    <a href="/trials" {% if nav == "trials" %}aria-current="page"{% endif %}>Trials</a>
+    <a href="/clients/new" {% if nav == "add" %}aria-current="page"{% endif %}>Add client</a>
+  </nav>
+  <div class="operator">
+    <span class="avatar" aria-hidden="true">{{ operator_name()[:1] }}</span>
+    {{ operator_name() }}
+    <form method="post" action="/logout"><button class="link-button" type="submit">Log out</button></form>
+  </div>
+</header>
+<main class="page">
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

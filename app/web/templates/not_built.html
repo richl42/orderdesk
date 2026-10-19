@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · Order Desk{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="breadcrumb"><a href="/">Clients</a></div>
+    <h1 style="margin-top: 6px">{{ title }}</h1>
+  </div>
+</div>
+<section class="card"><p class="empty">{{ message }}</p></section>
+{% endblock %}

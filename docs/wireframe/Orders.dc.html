@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Order Desk: order queue</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F6F6F4}
+a{color:#23408E}a:hover{color:#1A2F69}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F6F6F4; color: #1C1C1A; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 12px 32px; background: #FFFFFF; border-bottom: 1px solid #DADAD6">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div aria-hidden="true" style="width: 30px; height: 30px; border-radius: 7px; background: #1C1C1A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">OD</div>
+      <span style="font-weight: 600; font-size: 16px">Order Desk</span>
+      <span style="font-size: 12px; color: #45453F; border: 1px solid #DADAD6; border-radius: 999px; padding: 1px 9px">Internal</span>
+    </div>
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px">
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Clients</a>
+      <a href="Orders.dc.html" aria-current="page" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; background: #EDEDEA; color: #1C1C1A; text-decoration: none; font-weight: 500">Orders</a>
+      <a href="Trial.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Trials</a>
+      <a href="Setup.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Add client</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 8px; color: #45453F; font-size: 14px">
+      <div aria-hidden="true" style="width: 30px; height: 30px; border-radius: 999px; background: #E6ECF8; color: #23408E; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">R</div>
+      Rich
+    </div>
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+      <div>
+        <a href="Main.dc.html" style="font-size: 14px; text-decoration: none">Clients</a>
+        <span style="color: #5C5C57; font-size: 14px"> / ABC Cleaning Supplies</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 6px">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 600">ABC Cleaning Supplies</h1>
+          <span style="display: inline-block; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px; background: #E6ECF8; color: #23408E">Shadow trial · day 6 of 10</span>
+        </div>
+        <p style="margin: 4px 0 0; color: #5C5C57">Sage 200 · 412 products · 86 customers · Output: SalesOrderImport.csv</p>
+      </div>
+      <nav aria-label="Client sections" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #EDEDEA; border-radius: 10px">
+        <a href="Orders.dc.html" aria-current="page" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 7px; background: #FFFFFF; color: #1C1C1A; text-decoration: none; font-weight: 500">Orders</a>
+        <a href="Trial.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 7px; color: #45453F; text-decoration: none">Trial results</a>
+        <a href="Setup.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 7px; color: #45453F; text-decoration: none">Settings</a>
+      </nav>
+    </div>
+
+    <ol aria-label="How an order moves through the desk" style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px">
+      <li style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start">
+        <div aria-hidden="true" style="flex: none; width: 32px; height: 32px; border-radius: 999px; background: #23408E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600">1</div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="font-weight: 600">Upload orders</div>
+          <div style="font-size: 13px; color: #45453F">24 received today</div>
+          <div style="font-size: 13px; color: #5C5C57">22 forwarded automatically, 2 uploaded by you</div>
+        </div>
+      </li>
+      <li style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start">
+        <div aria-hidden="true" style="flex: none; width: 32px; height: 32px; border-radius: 999px; background: #23408E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600">2</div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="font-weight: 600">Review and approve</div>
+          <div style="font-size: 13px; color: #45453F">19 waiting for your approval</div>
+          <div style="font-size: 13px; color: #5C5C57">6 need a fix first</div>
+          <a href="Review.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 500">Start reviewing</a>
+        </div>
+      </li>
+      <li style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start">
+        <div aria-hidden="true" style="flex: none; width: 32px; height: 32px; border-radius: 999px; background: #23408E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600">3</div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="font-weight: 600">Export in ABC's format</div>
+          <div style="font-size: 13px; color: #45453F">4 approved orders ready</div>
+          <div style="font-size: 13px; color: #5C5C57">One file: SalesOrderImport.csv</div>
+          <a href="#export" style="display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 500">Go to export</a>
+        </div>
+      </li>
+    </ol>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px">
+      <div style="flex: 2 1 520px; min-width: 0; background: #FFFFFF; border: 2px dashed #B9B9B3; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center">
+        <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#45453F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M4 16v4h16v-4"></path></svg>
+        <div style="font-size: 12px; font-weight: 600; color: #23408E; letter-spacing: 0.04em">STEP 1</div>
+        <div style="font-weight: 600; font-size: 17px">Upload customer orders</div>
+        <div style="color: #5C5C57; font-size: 14px">What ABC's customers sent you: emails, PDFs, Excel or CSV. Drag files here, several at once is fine.</div>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 6px">
+          <button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: none; background: #23408E; color: #FFFFFF; font: inherit; font-weight: 500; cursor: pointer">Choose files</button>
+          <button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; font: inherit; font-weight: 500; cursor: pointer">Paste an email</button>
+        </div>
+      </div>
+      <div style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 999px; background: #2E8B4E"></span>
+          <span style="font-weight: 600">Auto forwarding is on</span>
+        </div>
+        <div style="font-size: 14px; color: #45453F">Copies of their orders inbox arrive here automatically.</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; background: #F6F6F4; border-radius: 8px; padding: 8px 10px">abc.orders@[your domain]</div>
+        <div style="font-size: 13px; color: #5C5C57">Last order arrived 3 minutes ago</div>
+        <div style="font-size: 13px; color: #7A4A00; background: #FBEFD9; border-radius: 8px; padding: 8px 10px">Trial mode: nothing here is entered into their system.</div>
+      </div>
+    </div>
+
+    <section style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; overflow: hidden">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid #E6E6E2">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 600"><span style="font-size: 12px; font-weight: 600; color: #23408E; letter-spacing: 0.04em; margin-right: 8px">STEP 2</span>Review and approve today's orders</h2>
+        <div role="group" aria-label="Filter by status" style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{filters}}" as="f" hint-placeholder-count="6">
+            <button type="button" style="{{f.style}}">{{f.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="overflow-x: auto">
+        <table style="width: 100%; min-width: 860px; border-collapse: collapse; font-size: 14px">
+          <thead>
+            <tr style="background: #F6F6F4; text-align: left">
+              <th scope="col" style="padding: 10px 20px; font-weight: 500; color: #45453F">Arrived</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Customer</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">PO number</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Came as</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Lines</th>
+              <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Status</th>
+              <th scope="col" style="padding: 10px 20px 10px 14px; font-weight: 500; color: #45453F"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Action</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{orders}}" as="o" hint-placeholder-count="8">
+              <tr style="border-top: 1px solid #EFEFEC">
+                <td style="padding: 10px 20px; color: #45453F; font-family: 'IBM Plex Mono', monospace">{{o.time}}</td>
+                <td style="padding: 10px 14px; font-weight: 500">{{o.from}}</td>
+                <td style="padding: 10px 14px; font-family: 'IBM Plex Mono', monospace">{{o.po}}</td>
+                <td style="padding: 10px 14px; color: #45453F">{{o.source}}</td>
+                <td style="padding: 10px 14px; color: #45453F">{{o.lines}}</td>
+                <td style="padding: 10px 14px">
+                  <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px">
+                    <span style="{{o.statusStyle}}">{{o.status}}</span>
+                    <span style="font-size: 12px; color: #5C5C57">{{o.note}}</span>
+                  </div>
+                </td>
+                <td style="padding: 6px 20px 6px 14px; text-align: right">
+                  <a href="Review.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; text-decoration: none; font-weight: 500">{{o.action}}</a>
+                </td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="export" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; background: #FFFFFF; border: 2px solid #23408E; border-radius: 12px">
+      <div>
+        <div style="font-size: 12px; font-weight: 600; color: #23408E; letter-spacing: 0.04em">STEP 3</div>
+        <div style="font-weight: 600; font-size: 17px">Export: 4 approved orders ready</div>
+        <div style="font-size: 13px; color: #5C5C57">One file in ABC's format, built from the template you uploaded at setup. In the trial it gets compared with what their staff entered. Once live, it gets imported into their system.</div>
+      </div>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 8px; border: none; background: #23408E; color: #FFFFFF; font: inherit; font-weight: 500; cursor: pointer">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"></path><path d="M7 11l5 5 5-5"></path><path d="M4 20h16"></path></svg>
+        Download SalesOrderImport.csv
+      </button>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1340}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var pill = function (bg, fg) {
+      return 'display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px; background: ' + bg + '; color: ' + fg;
+    };
+    var tones = {
+      'Ready': pill('#E3F1E7', '#1E6B3A'),
+      'Check': pill('#FBEFD9', '#7A4A00'),
+      'Problem': pill('#F9E3E3', '#9B2525'),
+      'Pass on': pill('#EDEDEA', '#45453F'),
+      'Approved': pill('#E6ECF8', '#23408E')
+    };
+    var fbase = 'min-height: 36px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer; ';
+    var filters = [
+      { label: 'All 24', on: true },
+      { label: 'Ready 13', on: false },
+      { label: 'Check 4', on: false },
+      { label: 'Problem 2', on: false },
+      { label: 'Pass on 1', on: false },
+      { label: 'Approved 4', on: false }
+    ];
+    var orders = [
+      { time: '15:42', from: 'Riverside Hotel', po: '2291', source: 'Email', lines: '3', status: 'Problem', note: '1 unknown product', action: 'Review' },
+      { time: '15:38', from: 'Mill Lane Café', po: '2295', source: 'PDF', lines: '7', status: 'Check', note: 'Price differs from list', action: 'Review' },
+      { time: '15:31', from: 'Harbour Gym', po: '2290', source: 'PDF', lines: '4', status: 'Ready', note: 'All lines matched', action: 'Open' },
+      { time: '15:20', from: "St Anne's School", po: 'SA-7731', source: 'Excel', lines: '18', status: 'Ready', note: 'All lines matched', action: 'Open' },
+      { time: '15:02', from: 'Unknown sender', po: 'none', source: 'Email', lines: '0', status: 'Pass on', note: 'Delivery chase, not an order', action: 'Open' },
+      { time: '14:55', from: 'Greenway Offices', po: 'GW-1180', source: 'Email', lines: '2', status: 'Approved', note: 'Approved 14:58', action: 'Open' },
+      { time: '14:41', from: 'The Old Mill Pub', po: '4471', source: 'CSV', lines: '9', status: 'Approved', note: 'Approved 14:46', action: 'Open' },
+      { time: '14:30', from: 'Riverside Hotel', po: '2289', source: 'Email', lines: '5', status: 'Approved', note: 'Approved 14:33', action: 'Open' }
+    ];
+    return {
+      filters: filters.map(function (f) {
+        return Object.assign({}, f, { style: fbase + (f.on ? 'border: 1px solid #1C1C1A; background: #1C1C1A; color: #FFFFFF;' : 'border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A;') });
+      }),
+      orders: orders.map(function (o) { return Object.assign({}, o, { statusStyle: tones[o.status] }); })
+    };
+  }
+}
+</script>
+</body>
+</html>

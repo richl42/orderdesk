@@ -1,0 +1,26 @@
+# Web app
+fastapi==0.149.0
+uvicorn==0.54.0
+Jinja2==3.1.6
+python-multipart==0.0.32
+itsdangerous==2.2.0
+
+# Database
+sqlmodel==0.0.48
+
+# Files and matching
+pandas==3.0.6
+openpyxl==3.1.5
+charset-normalizer==3.5.2
+pdfplumber==0.11.10
+rapidfuzz==3.14.6
+
+# AI
+anthropic==1.15.0
+
+# Demo data (PDF test orders)
+reportlab==5.0.1
+
+# Tests
+pytest==9.1.1
+httpx==0.28.1

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Order Desk: review an order</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#F6F6F4}
+a{color:#23408E}a:hover{color:#1A2F69}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F6F6F4; color: #1C1C1A; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 12px 32px; background: #FFFFFF; border-bottom: 1px solid #DADAD6">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div aria-hidden="true" style="width: 30px; height: 30px; border-radius: 7px; background: #1C1C1A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">OD</div>
+      <span style="font-weight: 600; font-size: 16px">Order Desk</span>
+      <span style="font-size: 12px; color: #45453F; border: 1px solid #DADAD6; border-radius: 999px; padding: 1px 9px">Internal</span>
+    </div>
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px">
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Clients</a>
+      <a href="Orders.dc.html" aria-current="page" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; background: #EDEDEA; color: #1C1C1A; text-decoration: none; font-weight: 500">Orders</a>
+      <a href="Trial.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Trials</a>
+      <a href="Setup.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 8px; color: #45453F; text-decoration: none">Add client</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 8px; color: #45453F; font-size: 14px">
+      <div aria-hidden="true" style="width: 30px; height: 30px; border-radius: 999px; background: #E6ECF8; color: #23408E; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">R</div>
+      Rich
+    </div>
+  </header>
+
+  <main style="max-width: 1360px; margin: 0 auto; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+      <div>
+        <a href="Main.dc.html" style="font-size: 14px; text-decoration: none">Clients</a>
+        <span style="color: #5C5C57; font-size: 14px"> / </span>
+        <a href="Orders.dc.html" style="font-size: 14px; text-decoration: none">ABC Cleaning Supplies</a>
+        <span style="color: #5C5C57; font-size: 14px"> / PO 2291</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 6px">
+          <h1 style="margin: 0; font-size: 26px; font-weight: 600">PO 2291 · Riverside Hotel</h1>
+          <span style="display: inline-block; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px; background: #F9E3E3; color: #9B2525">1 line needs you</span>
+        </div>
+        <p style="margin: 4px 0 0; color: #5C5C57; font-size: 14px">Arrived 15:42 by email · Read in 6 seconds · AI cost 1.4p · Order 1 of 6 waiting</p>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <a href="Orders.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; text-decoration: none; font-weight: 500">Back to queue</a>
+        <a href="Review.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; text-decoration: none; font-weight: 500">Next order</a>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <section aria-labelledby="orig" style="flex: 1 1 380px; min-width: 0; background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; overflow: hidden">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #E6E6E2">
+          <h2 id="orig" style="margin: 0; font-size: 16px; font-weight: 600">What they sent</h2>
+          <span style="font-size: 12px; color: #45453F; background: #EDEDEA; border-radius: 999px; padding: 2px 10px">Email</span>
+        </div>
+        <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+          <div style="font-size: 13px; color: #45453F; display: flex; flex-direction: column; gap: 2px">
+            <div><span style="color: #5C5C57">From</span> purchasing@riversidehotel.co.uk</div>
+            <div><span style="color: #5C5C57">Subject</span> Order for Thursday</div>
+            <div><span style="color: #5C5C57">Received</span> Mon 19 Oct 2026, 15:42</div>
+          </div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.8; white-space: pre-line; background: #F6F6F4; border-radius: 8px; padding: 14px 16px">Hi,
+
+Please can we order:
+<span style="background: #E3F1E7; border-radius: 4px; padding: 1px 4px">120 bottles of the antibac spray</span>
+<span style="background: #E3F1E7; border-radius: 4px; padding: 1px 4px">4 boxes medium blue gloves</span>
+<span style="background: #F9E3E3; border-radius: 4px; padding: 1px 4px">2 x blue roll 2ply</span>
+
+Delivery Thursday to the kitchen entrance please. Our ref PO 2291.
+
+Thanks,
+Sam</div>
+          <div style="font-size: 13px; color: #5C5C57">Highlights show which part of the email each order line came from.</div>
+        </div>
+      </section>
+
+      <section aria-labelledby="extr" style="flex: 2 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <div style="background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; overflow: hidden">
+          <div style="padding: 14px 18px; border-bottom: 1px solid #E6E6E2">
+            <h2 id="extr" style="margin: 0; font-size: 16px; font-weight: 600">What the system made of it</h2>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding: 18px">
+            <div>
+              <div style="font-size: 12px; color: #5C5C57">Customer</div>
+              <div style="font-weight: 500">Riverside Hotel <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 400; color: #45453F">CUST-018</span></div>
+              <div style="font-size: 12px; color: #1E6B3A">✓ Matched by sender email</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #5C5C57">PO number</div>
+              <div style="font-weight: 500; font-family: 'IBM Plex Mono', monospace">2291</div>
+              <div style="font-size: 12px; color: #1E6B3A">✓ Not seen before</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #5C5C57">Delivery</div>
+              <div style="font-weight: 500">Thu 22 Oct 2026</div>
+              <div style="font-size: 12px; color: #45453F">Note: kitchen entrance</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #5C5C57">Deliver to</div>
+              <div style="font-weight: 500">14 River Walk</div>
+              <div style="font-size: 12px; color: #45453F">From their account</div>
+            </div>
+          </div>
+
+          <div style="overflow-x: auto; border-top: 1px solid #E6E6E2">
+            <table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px">
+              <thead>
+                <tr style="background: #F6F6F4; text-align: left">
+                  <th scope="col" style="padding: 10px 18px; font-weight: 500; color: #45453F">They wrote</th>
+                  <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Matched product</th>
+                  <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Qty</th>
+                  <th scope="col" style="padding: 10px 14px; font-weight: 500; color: #45453F">Price</th>
+                  <th scope="col" style="padding: 10px 18px 10px 14px; font-weight: 500; color: #45453F">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-top: 1px solid #EFEFEC; vertical-align: top">
+                  <td style="padding: 12px 18px">120 bottles of the antibac spray</td>
+                  <td style="padding: 12px 14px">
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">SPR-12</div>
+                    <div style="color: #45453F">Antibacterial spray 750ml, case of 12</div>
+                  </td>
+                  <td style="padding: 12px 14px">
+                    <div style="font-weight: 500">10 cases</div>
+                    <div style="font-size: 12px; color: #5C5C57">120 bottles ÷ 12</div>
+                  </td>
+                  <td style="padding: 12px 14px">£28.00</td>
+                  <td style="padding: 12px 18px 12px 14px">
+                    <span style="display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px; background: #E3F1E7; color: #1E6B3A">Ready</span>
+                    <div style="font-size: 12px; color: #5C5C57; margin-top: 4px">Remembered phrasing</div>
+                  </td>
+                </tr>
+                <tr style="border-top: 1px solid #EFEFEC; vertical-align: top">
+                  <td style="padding: 12px 18px">4 boxes medium blue gloves</td>
+                  <td style="padding: 12px 14px">
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">GLV-202</div>
+                    <div style="color: #45453F">Blue nitrile gloves M, box of 100</div>
+                  </td>
+                  <td style="padding: 12px 14px"><div style="font-weight: 500">4 boxes</div></td>
+                  <td style="padding: 12px 14px">£42.00</td>
+                  <td style="padding: 12px 18px 12px 14px">
+                    <span style="display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px; background: #E3F1E7; color: #1E6B3A">Ready</span>
+                    <div style="font-size: 12px; color: #5C5C57; margin-top: 4px">Exact name match</div>
+                  </td>
+                </tr>
+                <tr style="border-top: 1px solid #EFEFEC; vertical-align: top; background: #FDF6F6">
+                  <td style="padding: 12px 18px">2 x blue roll 2ply</td>
+                  <td style="padding: 12px 14px" colspan="3">
+                    <div style="display: flex; flex-direction: column; gap: 10px">
+                      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F">Pick the right product
+                        <select style="min-height: 44px; padding: 0 10px; border: 1px solid #9B2525; border-radius: 8px; font: inherit; font-size: 14px; color: #1C1C1A; background: #FFFFFF">
+                          <option>Choose a product…</option>
+                          <option>TOW-310 · Blue roll 2ply, pack of 6 (closest match)</option>
+                          <option>TOW-311 · Blue roll 2ply, single roll</option>
+                          <option>TOW-303 · Paper towels, case of 12</option>
+                        </select>
+                      </label>
+                      <div style="display: flex; flex-wrap: wrap; gap: 10px">
+                        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F; flex: 1 1 140px">Quantity
+                          <input type="text" value="2" style="min-height: 44px; padding: 0 10px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 14px; color: #1C1C1A; background: #FFFFFF">
+                        </label>
+                        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #45453F; flex: 1 1 140px">Unit
+                          <select style="min-height: 44px; padding: 0 10px; border: 1px solid #C9C9C4; border-radius: 8px; font: inherit; font-size: 14px; color: #1C1C1A; background: #FFFFFF">
+                            <option>Pack of 6</option><option>Single roll</option>
+                          </select>
+                        </label>
+                      </div>
+                      <label style="display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px">
+                        <input type="checkbox" checked="checked" style="width: 20px; height: 20px; accent-color: #23408E">
+                        Remember this for Riverside Hotel next time
+                      </label>
+                    </div>
+                  </td>
+                  <td style="padding: 12px 18px 12px 14px">
+                    <span style="display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px; background: #F9E3E3; color: #9B2525">Problem</span>
+                    <div style="font-size: 12px; color: #5C5C57; margin-top: 4px">Not in catalogue by that name. Unit unclear.</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 16px">
+          <div style="flex: 1 1 280px; min-width: 0; background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+            <h3 style="margin: 0; font-size: 15px; font-weight: 600">Checks</h3>
+            <sc-for list="{{checks}}" as="c" hint-placeholder-count="5">
+              <div style="display: flex; align-items: flex-start; gap: 10px; font-size: 14px">
+                <span style="{{c.iconStyle}}" aria-hidden="true">{{c.icon}}</span>
+                <span><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{c.sr}}</span>{{c.text}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex: 1 1 380px; min-width: 0; background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+            <h3 style="margin: 0; font-size: 15px; font-weight: 600">Export preview: this order in ABC's format</h3>
+            <pre style="margin: 0; padding: 12px 14px; background: #1C1C1A; color: #F1F1EE; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; white-space: pre">AccountRef,CustOrderNo,OrderDate,StockCode,Qty,UnitPrice,DeliveryDate,Notes
+CUST-018,2291,19/10/2026,SPR-12,10,28.00,22/10/2026,Kitchen entrance
+CUST-018,2291,19/10/2026,GLV-202,4,42.00,22/10/2026,Kitchen entrance
+CUST-018,2291,19/10/2026,[pick product],2,,22/10/2026,Kitchen entrance</pre>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; background: #FFFFFF; border: 1px solid #DADAD6; border-radius: 12px">
+          <div style="font-size: 14px; color: #45453F">Your review time on this order: <span style="font-family: 'IBM Plex Mono', monospace; color: #1C1C1A">0:22</span></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; font: inherit; font-weight: 500; cursor: pointer">Not an order</button>
+            <button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; font: inherit; font-weight: 500; cursor: pointer">Ask client contact</button>
+            <button type="button" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9C9C4; background: #FFFFFF; color: #1C1C1A; font: inherit; font-weight: 500; cursor: pointer">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"></path><path d="M7 11l5 5 5-5"></path><path d="M4 20h16"></path></svg>
+              Download this order
+            </button>
+            <a href="Orders.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 8px; background: #23408E; color: #FFFFFF; text-decoration: none; font-weight: 500">Approve and add to export</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var ok = 'flex: none; width: 20px; height: 20px; border-radius: 999px; background: #E3F1E7; color: #1E6B3A; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600';
+    var bad = 'flex: none; width: 20px; height: 20px; border-radius: 999px; background: #F9E3E3; color: #9B2525; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600';
+    return {
+      checks: [
+        { icon: '✓', sr: 'Passed: ', iconStyle: ok, text: 'Customer recognised' },
+        { icon: '✓', sr: 'Passed: ', iconStyle: ok, text: 'Not a duplicate of the last 7 days' },
+        { icon: '✓', sr: 'Passed: ', iconStyle: ok, text: 'Prices match their price list' },
+        { icon: '✓', sr: 'Passed: ', iconStyle: ok, text: 'Arrived before the 15:00 cutoff' },
+        { icon: '!', sr: 'Failed: ', iconStyle: bad, text: '1 line could not be matched' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
