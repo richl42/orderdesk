@@ -53,3 +53,6 @@ Assumptions made while building, one line each. Agreed with Rich on 19 Oct 2026 
 - The minimum order rule is on whenever a minimum value is entered; leaving it empty means no minimum.
 - "Save client" checks details, catalogue, customer list and output format are done (rules are optional) and lists anything missing.
 - Old .xls files are refused with a message to save them as .xlsx or .csv; uploads over 25 MB are refused.
+
+## Milestone 3
+- The API key can also be set as ORDERDESK_ANTHROPIC_API_KEY, for cloud build sessions where ANTHROPIC_API_KEY may not get through; ANTHROPIC_API_KEY wins when both are set.

@@ -75,7 +75,8 @@ def get_settings() -> Settings:
         data_dir = PROJECT_DIR / data_dir
 
     return Settings(
-        anthropic_api_key=values.get("ANTHROPIC_API_KEY", ""),
+        # ORDERDESK_ANTHROPIC_API_KEY is for cloud build sessions, where ANTHROPIC_API_KEY may not get through.
+        anthropic_api_key=values.get("ANTHROPIC_API_KEY") or values.get("ORDERDESK_ANTHROPIC_API_KEY", ""),
         anthropic_model=values.get("ANTHROPIC_MODEL") or "claude-sonnet-5-5",
         app_password=values.get("APP_PASSWORD", ""),
         secret_key=values.get("SECRET_KEY", ""),
