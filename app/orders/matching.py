@@ -216,6 +216,7 @@ def match_order(session: Session, order: Order) -> None:
     result = score_order(session, client, order, lines)
     if order.initial_status is None:
         order.initial_status = result  # set once by the pipeline, never changed
+        order.first_pass = first_pass_snapshot(session, order, lines)
 
     settings = get_settings()
     cost = order.ai_cost_gbp
@@ -303,3 +304,16 @@ def score_order(session: Session, client: Client, order: Order, lines: list[Orde
         order.status = result
     session.add(order)
     return result
+
+
+def first_pass_snapshot(session: Session, order: Order, lines: list[OrderLine]) -> dict:
+    """What the pipeline made of the order before any person touched it: customer, header and lines."""
+    customer = _customer(session, order.client_id, order.customer_id)
+    return {
+        "account_code": customer.account_code if customer else None,
+        "po_number": order.po_number,
+        "delivery_date": order.requested_delivery_date.isoformat() if order.requested_delivery_date else None,
+        "lines": [{"product_code": ln.product_code, "qty": str(ln.qty) if ln.qty is not None else None,
+                   "unit": ln.unit, "unit_price": str(ln.unit_price) if ln.unit_price is not None else None}
+                  for ln in lines],
+    }

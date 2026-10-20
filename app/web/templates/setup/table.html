@@ -1,6 +1,6 @@
 {% from "setup/macros.html" import section_head, messages, file_icon, upload_form %}
 {% if oob %}{% include "setup/steps.html" %}{% endif %}
-{% set base = "/clients/%s/setup/files/%s" % (client.id, s.kind) %}
+{% set base = base_url or "/clients/%s/setup/files/%s" % (client.id, s.kind) %}
 {% set target = "#sec-" ~ s.kind %}
 <section id="sec-{{ s.kind }}" class="card setup-section">
   <a id="{{ meta.anchor }}" class="anchor"></a>

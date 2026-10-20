@@ -26,7 +26,7 @@ from app.models import Alias, Client, Customer
 from pipeline import normalise
 from pipeline.tables import guess_mapping, read_table
 from pipeline.vocab import DEFAULT_RULES, DEFAULT_UNIT_SYNONYMS, ClientMode, MappingKind
-from seed.demo_orders import write_demo_orders
+from seed.demo_orders import STAFF_FILE, write_demo_orders
 
 DEMO_ID = "demo"
 SEED_DIR = Path(__file__).resolve().parent / "demo"
@@ -244,6 +244,7 @@ def write_demo_files(out_dir: Path = SEED_DIR) -> dict[str, Path]:
     band_prices = {("B", code): band_b_price(code) for code in BAND_B_CODES}
     paths["orders"], paths["answers"] = write_demo_orders(out_dir, products, customers, band_prices, barcodes,
                                                           DEMO_CONTACT_EMAIL)
+    paths["staff_entries"] = out_dir / STAFF_FILE
     return paths
 
 

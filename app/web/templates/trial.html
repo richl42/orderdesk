@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}{{ client.name }} · Trial results · Order Desk{% endblock %}
+{% block content %}
+{% set m = v.measures %}
+<div class="page-head">
+  <div>
+    <div class="breadcrumb"><a href="/">Clients</a> / <a href="/clients/{{ client.id }}/orders">{{ client.name }}</a> / Trial results</div>
+    <h1 style="margin-top: 6px">Shadow trial results</h1>
+    <p class="lede">
+      {% if client.trial_start_date %}Started {{ client.trial_start_date | long_date }}{% if v.trial_day %} · {% if v.trial_day > client.trial_working_days %}Finished after {{ client.trial_working_days }} working days{% else %}Day {{ v.trial_day }} of {{ client.trial_working_days }} working days{% endif %}{% endif %}{% else %}No trial start date set yet{% endif %}
+      {% if v.first and v.last %} · Results below cover {{ v.first.day }}{% if v.first.month != v.last.month %} {{ v.first.strftime("%b") }}{% endif %} to {{ v.last.day }} {{ v.last.strftime("%b") }}{% endif %}
+    </p>
+  </div>
+  <div class="head-actions">
+    <a class="btn btn-secondary" href="#staff">Upload staff entries</a>
+    {% if m %}<a class="btn btn-primary" href="/clients/{{ client.id }}/trial/report" target="_blank" rel="noopener">Export report for client</a>{% endif %}
+  </div>
+</div>
+<nav class="tabs" aria-label="Client sections" style="align-self: flex-start">
+  <a href="/clients/{{ client.id }}/orders">Orders</a>
+  <a href="/clients/{{ client.id }}/trial" aria-current="page">Trial results</a>
+  <a href="/clients/{{ client.id }}/setup">Settings</a>
+</nav>
+
+{% if notice %}<div class="notice notice-ready">{{ notice }}</div>{% endif %}
+{% if error %}<div class="notice notice-problem">{{ error }}</div>{% endif %}
+{% if not client.trial_start_date %}<div class="notice notice-check">Set the trial start date in <a href="/clients/{{ client.id }}/setup#details">Settings</a> to see the day by day results.</div>{% endif %}
+
+{% if v.upload %}
+<section class="card card-body staff-card">
+  <div class="file-name">
+    <span class="mono">{{ v.upload.filename }}</span>
+    <span class="pill pill-ready">Answer key loaded</span>
+  </div>
+  <p class="muted small">What their team actually entered into {{ client.erp_system or "their system" }}. {{ v.matched_by_po }} of {{ v.staff_orders }} of their orders matched to ours by PO number{% if v.only_ours or v.only_theirs %}; {{ v.only_ours }} only in ours, {{ v.only_theirs }} only in theirs{% endif %}. Uploaded {{ v.upload.uploaded_at | moment }}, {{ v.upload.row_count }} rows.</p>
+  <form method="post" action="/clients/{{ client.id }}/trial/compare">
+    <button type="submit" class="btn btn-secondary">Compare again</button>
+    <span class="hint">After approving more orders. Your notes are kept.</span>
+  </form>
+</section>
+{% endif %}
+
+{% if m %}
+<div class="tiles six">
+  <div class="tile"><div class="tile-label">Orders compared</div><div class="tile-value">{{ m.compared }}</div><div class="tile-note">Paired with their team's entries</div></div>
+  <div class="tile"><div class="tile-label">Exactly right</div><div class="tile-value">{{ "%g" | format(m.pct(m.exactly_right)) if m.compared else "n/a" }}{% if m.compared %}%{% endif %}</div><div class="tile-note">{{ m.exactly_right }} of {{ m.compared }}{% if v.staff_errors %}, not counting staff errors{% endif %}</div></div>
+  <div class="tile {{ 'tile-good' if m.confidently_wrong == 0 else 'tile-bad' }}"><div class="tile-label">Confidently wrong</div><div class="tile-value">{{ m.confidently_wrong }}</div><div class="tile-note">Marked Ready and then wrong. Target: 0</div></div>
+  <div class="tile"><div class="tile-label">Flagged for review</div><div class="tile-value">{{ m.flagged }}</div><div class="tile-note">{{ "%g" | format(m.pct(m.flagged)) if m.compared else "0" }}% were Check or Problem first</div></div>
+  <div class="tile"><div class="tile-label">Average review time</div><div class="tile-value">{{ m.review_seconds | duration if m.review_seconds is not none else "n/a" }}</div><div class="tile-note">Per approved order</div></div>
+  <div class="tile"><div class="tile-label">Staff time it would save</div><div class="tile-value">{{ "%g" | format(m.hours_saved) }} h</div><div class="tile-note">{{ m.compared }} orders × {{ client.minutes_per_order }} minutes</div></div>
+</div>
+
+{% if v.days %}
+<section class="section" aria-labelledby="days-title">
+  <h2 id="days-title">Day by day</h2>
+  <ol class="days">
+    {% for d in v.days %}
+    <li class="day day-{{ d.state }}">
+      <div class="day-name">{{ d.label }}</div>
+      {% if d.state == "done" %}<div class="day-value">{{ d.pct }}</div><div class="day-note">{{ d.right }} of {{ d.compared }}</div>
+      {% elif d.state == "today" %}<div class="day-value">Today</div><div class="day-note">In progress</div>
+      {% elif d.state == "upcoming" %}<div class="day-value muted">Upcoming</div><div class="day-note">&nbsp;</div>
+      {% else %}<div class="day-value muted">None</div><div class="day-note">No orders compared</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+<section class="card" id="differences" aria-labelledby="diff-title">
+  <div class="card-head">
+    <h2 id="diff-title">Every difference from their team</h2>
+    {% set flagged_diffs = v.differences | length %}
+    <span class="hint">{{ flagged_diffs }} difference{{ "" if flagged_diffs == 1 else "s" }}{% if flagged_diffs and m.confidently_wrong == 0 %}; none on an order marked Ready{% endif %}</span>
+  </div>
+  {% if v.differences %}
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th scope="col">Order</th><th scope="col">Field</th><th scope="col">We entered</th><th scope="col">Staff entered</th><th scope="col">Why</th><th scope="col">Fix</th></tr></thead>
+      <tbody>
+        {% for d in v.differences %}
+        <tr>
+          <td>{% if d.order_href %}<a href="{{ d.order_href }}">{{ d.order_label }}</a>{% else %}{{ d.order_label }}{% endif %}</td>
+          <td>{{ d.field }}</td>
+          <td class="mono">{{ d.ours }}</td>
+          <td class="mono">{{ d.theirs }}</td>
+          <td>
+            <form hx-post="/clients/{{ client.id }}/trial/differences/{{ d.comparison_id }}/{{ d.index }}" hx-trigger="change" hx-target="next .saved" hx-swap="innerHTML" method="post" action="/clients/{{ client.id }}/trial/differences/{{ d.comparison_id }}/{{ d.index }}">
+              <label class="visually-hidden" for="why-{{ d.comparison_id }}-{{ d.index }}">Why</label>
+              <input id="why-{{ d.comparison_id }}-{{ d.index }}" class="control" type="text" name="note" value="{{ d.note }}" placeholder="What caused this?">
+            </form>
+          </td>
+          <td>
+            <form hx-post="/clients/{{ client.id }}/trial/differences/{{ d.comparison_id }}/{{ d.index }}" hx-trigger="change" hx-target="next .saved" hx-swap="innerHTML" method="post" action="/clients/{{ client.id }}/trial/differences/{{ d.comparison_id }}/{{ d.index }}">
+              <label class="visually-hidden" for="tag-{{ d.comparison_id }}-{{ d.index }}">Fix</label>
+              <select id="tag-{{ d.comparison_id }}-{{ d.index }}" class="control" name="tag">
+                <option value="" {% if not d.tag %}selected{% endif %}>Choose…</option>
+                {% for value, label in tags.items() %}<option value="{{ value }}" {% if d.tag == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+            </form>
+            <span class="saved hint" role="status"></span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint pad">"Staff error" means their entry was wrong, not ours: it does not count against exactly right or confidently wrong. Reload the page to see the tiles change.</p>
+  {% else %}
+  <p class="empty">No differences: every order compared came out exactly the same as their team's entry.</p>
+  {% endif %}
+</section>
+
+<section class="card" id="summary" aria-labelledby="summary-title">
+  <div class="card-head"><h2 id="summary-title">Summary for the client</h2></div>
+  <form class="card-body summary-form" method="post" action="/clients/{{ client.id }}/trial/summary">
+    <label class="visually-hidden" for="summary-text">Summary for the client</label>
+    <textarea id="summary-text" name="text" rows="6" class="control">{{ v.summary }}</textarea>
+    <p class="hint">This text goes into the exported report. Edit before sending.{% if v.summary_edited %} You have edited it; the numbers in it will not update by themselves.{% endif %}</p>
+    <div class="section-actions">
+      {% if v.summary_edited %}<button type="submit" name="reset" value="1" class="btn btn-secondary">Write it again from the numbers</button>{% endif %}
+      <button type="submit" class="btn btn-primary">Save summary</button>
+    </div>
+  </form>
+</section>
+
+<details class="card card-body details-for-you">
+  <summary class="label-strong">Details for you</summary>
+  <p>First pass exact: {% if m.first_pass_exact is not none %}<strong>{{ m.first_pass_exact }} of {{ m.first_pass_known }}</strong> ({{ "%.1f" | format(100 * m.first_pass_exact / m.first_pass_known) }}%) of the compared orders were exactly right as the system first made them, before any correction{% else %}not known for these orders{% endif %}.</p>
+  <p class="hint">Not shown in the client report.</p>
+</details>
+{% endif %}
+
+<div id="staff" class="staff-upload">
+  {% if v.upload and not upload_open %}
+  <details class="card card-body">
+    <summary class="label-strong">Upload a newer staff entries file</summary>
+    {% with s=staff %}{% include "setup/table.html" %}{% endwith %}
+  </details>
+  {% else %}
+  {% with s=staff %}{% include "setup/table.html" %}{% endwith %}
+  {% endif %}
+</div>
+{% endblock %}

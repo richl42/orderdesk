@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shadow trial report · {{ client.name }}</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="report">
+{% set m = v.measures %}
+<main class="report-page">
+  <div class="report-actions no-print">
+    <button type="button" class="btn btn-primary" onclick="window.print()">Print or save as PDF</button>
+    <a class="btn btn-secondary" href="/clients/{{ client.id }}/trial">Back to trial results</a>
+  </div>
+
+  <header class="report-head">
+    <div class="small muted">Shadow trial report</div>
+    <h1>{{ client.name }}</h1>
+    <p class="lede">{% if v.first and v.last %}{{ v.first | long_date }} to {{ v.last | long_date }}{% endif %}{% if client.trial_start_date %} · {{ client.trial_working_days }} working day trial{% endif %}</p>
+  </header>
+
+  {% if m %}
+  <section class="tiles four">
+    <div class="tile"><div class="tile-label">Exactly right</div><div class="tile-value">{{ "%g" | format(m.pct(m.exactly_right)) if m.compared else "n/a" }}{% if m.compared %}%{% endif %}</div><div class="tile-note">{{ m.exactly_right }} of {{ m.compared }} orders matched your team's entry</div></div>
+    <div class="tile {{ 'tile-good' if m.confidently_wrong == 0 else 'tile-bad' }}"><div class="tile-label">Confidently wrong</div><div class="tile-value">{{ m.confidently_wrong }}</div><div class="tile-note">Orders marked ready that turned out wrong</div></div>
+    <div class="tile"><div class="tile-label">Flagged for a person to check</div><div class="tile-value">{{ "%g" | format(m.pct(m.flagged)) if m.compared else "0" }}%</div><div class="tile-note">{{ m.flagged }} of {{ m.compared }} orders</div></div>
+    <div class="tile"><div class="tile-label">Your team's time it would save</div><div class="tile-value">{{ "%g" | format(m.hours_saved) }} hours</div><div class="tile-note">At {{ client.minutes_per_order }} minutes per order</div></div>
+  </section>
+
+  <section class="report-section">
+    <h2>Summary</h2>
+    <p class="report-summary">{{ v.summary }}</p>
+  </section>
+
+  {% if v.days %}
+  <section class="report-section">
+    <h2>Day by day</h2>
+    <table class="data-table report-table">
+      <thead><tr><th scope="col">Day</th><th scope="col">Exactly right</th><th scope="col">Orders</th></tr></thead>
+      <tbody>
+        {% for d in v.days %}
+        <tr><td>{{ d.label }}</td><td>{% if d.state == "done" %}{{ d.pct }}{% elif d.state == "upcoming" %}Upcoming{% elif d.state == "today" %}Today{% else %}None{% endif %}</td><td>{% if d.compared %}{{ d.right }} of {{ d.compared }}{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <section class="report-section">
+    <h2>Every difference from your team's entries</h2>
+    {% if v.differences %}
+    <table class="data-table report-table">
+      <thead><tr><th scope="col">Order</th><th scope="col">Field</th><th scope="col">We entered</th><th scope="col">Your team entered</th><th scope="col">Cause</th></tr></thead>
+      <tbody>
+        {% for d in v.differences %}
+        <tr><td>{{ d.order_label }}</td><td>{{ d.field }}</td><td>{{ d.ours }}</td><td>{{ d.theirs }}</td><td>{{ d.note }}{% if d.tag %}{% if d.note %} · {% endif %}{{ tags.get(d.tag, "") }}{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if v.staff_errors %}<p class="small muted">Differences marked "Staff error" were mistakes in the staff entry, not ours, so they do not count against exactly right.</p>{% endif %}
+    {% else %}
+    <p>None: every order compared came out exactly the same as your team's entry.</p>
+    {% endif %}
+  </section>
+  {% else %}
+  <p>No staff entries have been compared yet.</p>
+  {% endif %}
+  <footer class="small muted report-foot">Orders were processed in parallel with your team and never entered into your system during the trial.</footer>
+</main>
+</body>
+</html>

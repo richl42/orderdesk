@@ -132,3 +132,16 @@ Assumptions made while building, one line each. Agreed with Rich on 19 Oct 2026 
 - No output format set up means no file, with a plain message pointing at Settings.
 - Answer key changes: order 10 (the scanned PDF) now holds the three lines typed in from the scan, with their export rows, so first pass exact on the demo reads 90% (nothing can read a scan first time). Order 05's delivery note is the customer's whole sentence, which is what is written and what gets exported.
 - make check-export FILE=<file> compares a downloaded demo export with the answer keys' expected rows (79 rows for the 17 approved orders).
+
+## Milestone 7
+- The demo staff file (staff_entries_demo.csv) holds the 17 real sales orders (agreed with Rich): staff would not enter the chase, the amendment as a new order, or a non-customer. Its 3 planted differences are all on orders the system flagged (agreed): Harbour View 2 cases instead of 3, Mill Lane delivery Mon 19 Oct instead of Fri 16 Oct, St Anne's BAG-405 instead of BAG-404.
+- Staff entries are uploaded on the trial screen with the same column-checking screen as setup. A new upload replaces the previous one; notes and fix tags are kept for differences that are still there.
+- "Ours" are this client's Approved and Exported orders that arrived within the dates the staff file covers (or the trial's working days when the file has no dates).
+- Orders pair by account code and PO number; when the same PO appears more than once (the Tower House duplicate), the order date decides. Orders with no PO pair by account code and order date only when exactly one matches on each side. Unpaired orders are listed as only ours or only theirs.
+- Lines pair by product code (the same product twice is added up). A product only on our side facing one only on theirs is one "product" difference. Staff quantities are converted to the sell unit with the client's unit words and pack sizes; prices are equal within 1p; delivery dates are compared only when both sides have one.
+- Notes and fix tags are kept per difference, so an order with two differences can have two causes. An order is exactly right when every difference on it is tagged Staff error.
+- Confidently wrong counts compared orders whose first status was Ready and are not exactly right, and also Ready orders their team never entered (only ours) until explained with a Staff error tag.
+- The order as the pipeline first made it is kept on the order (first_pass) when it is matched, for the internal "first pass exact" measure on the trial page. Orders matched before Milestone 7 show it as not known.
+- Day by day tiles go by the day our order arrived. A trial day with results shows them even if it is today or later (the demo's orders run to Fri 23 Oct); otherwise Today, Upcoming, or None.
+- The summary paragraph is written by code from the real numbers, not by the AI. Once edited, the operator's wording is kept until they ask for it to be written again.
+- The client report is its own print-friendly page (Print or save as PDF), with the tiles, summary, day by day results and differences with their causes; never AI cost, review time, first pass or other internal figures.

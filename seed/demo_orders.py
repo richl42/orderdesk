@@ -756,4 +756,49 @@ def write_demo_orders(out_dir: Path, products: dict, customers: dict, band_price
     for key, answer in answers.items():
         (answers_dir / f"{key}.json").write_text(json.dumps(answer, indent=2, ensure_ascii=False) + "\n",
                                                  encoding="utf-8")
+    write_staff_entries(out_dir, answers, products, band_prices, customers)
     return orders_dir, answers_dir
+
+
+# ---------------------------------------------------------------- the staff's own entries (for the trial screen)
+
+STAFF_FILE = "staff_entries_demo.csv"
+STAFF_UNITS = {"CASE": "CS", "BOX": "BX", "PACK": "PK", "EACH": "EA"}
+# The three differences planted on purpose, all on orders the system flagged for review.
+PLANTED = {
+    "05_harbourview_letter": "qty",  # staff entered 2 cases where we have 3
+    "09_milllane_after_cutoff": "delivery",  # staff moved delivery to Monday 19 October
+    "13_stannes_own_codes": "product",  # staff picked swing bin liners instead of pedal bin liners
+}
+
+
+def write_staff_entries(out_dir: Path, answers: dict[str, dict], products: dict, band_prices: dict,
+                        customers: dict) -> Path:
+    """What the client's own team entered for the same orders, as exported from their system.
+
+    The 17 real sales orders (the chase, the amendment and the non-customer are not entered),
+    the same as ours except for the three planted differences.
+    """
+    rows = [["Order Ref", "Account", "Entered On", "Item", "Qty", "UOM", "Price", "Due Date"]]
+    for answer in sorted(answers.values(), key=lambda a: a["received_at"]):
+        if not answer["expected_export_rows"]:
+            continue
+        planted = PLANTED.get(answer["order"])
+        entered = datetime.fromisoformat(answer["received_at"].replace("Z", "+00:00")).astimezone(LONDON)
+        due = date.fromisoformat(answer["requested_delivery_date"]) if answer["requested_delivery_date"] else None
+        if planted == "delivery":
+            due = date(2026, 10, 19)
+        band = customers[answer["customer"]["account_code"]]["price_band"]
+        for line in answer["lines"]:
+            if not line["product_code"]:
+                continue
+            code, qty, price = line["product_code"], line["qty"], line["unit_price"]
+            if planted == "qty" and code == "CLN-103":
+                qty = "2"
+            if planted == "product" and code == "BAG-404":
+                code, price = "BAG-405", _price("BAG-405", band, products, band_prices)
+            rows.append([answer["po_number"] or "", answer["customer"]["account_code"], f"{entered:%d/%m/%Y}", code,
+                         qty, STAFF_UNITS.get(line["unit"], line["unit"]), price, f"{due:%d/%m/%Y}" if due else ""])
+    path = out_dir / STAFF_FILE
+    path.write_bytes(_csv_bytes(rows))
+    return path

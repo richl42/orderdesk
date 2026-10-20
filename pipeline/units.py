@@ -29,7 +29,7 @@ def _flag(code: str, message: str, severity: str) -> dict:
 
 def plural(word: str, n: Decimal | int | None = None) -> str:
     word = word.lower()
-    if n is not None and Decimal(n) == 1:
+    if word == "each" or (n is not None and Decimal(n) == 1):
         return word
     if word.endswith(("x", "s", "ch", "sh")):
         return word + "es"

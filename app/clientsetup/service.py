@@ -45,6 +45,7 @@ TABLE_KINDS = {
     MappingKind.CATALOGUE: ("products", "product"),
     MappingKind.CUSTOMERS: ("customers", "customer"),
     MappingKind.PRICES: ("prices", "price"),
+    MappingKind.STAFF_ENTRIES: ("staff entries", "staff entry"),
 }
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -214,8 +215,10 @@ def saved_mapping(session: Session, client_id: str, kind: str) -> ColumnMapping 
 
 
 def saved_count(session: Session, client_id: str, kind: str) -> int:
+    from app.models import StaffEntryLine
+
     model = {MappingKind.CATALOGUE: CatalogueItem, MappingKind.CUSTOMERS: Customer,
-             MappingKind.PRICES: PriceListEntry}[kind]
+             MappingKind.PRICES: PriceListEntry, MappingKind.STAFF_ENTRIES: StaffEntryLine}[kind]
     return len(session.exec(select(model.id).where(model.client_id == client_id)).all())
 
 
@@ -365,8 +368,10 @@ def save_table(session: Session, client: Client, kind: str, mapping: dict[str, s
     if missing:
         return table_section(session, client, kind, mapping=mapping,
                              error="Choose which columns hold: " + ", ".join(FIELDS[kind][m] for m in missing) + ".")
+    from app.trial.service import import_staff_entries
+
     importer = {MappingKind.CATALOGUE: importers.import_catalogue, MappingKind.CUSTOMERS: importers.import_customers,
-                MappingKind.PRICES: importers.import_prices}[kind]
+                MappingKind.PRICES: importers.import_prices, MappingKind.STAFF_ENTRIES: import_staff_entries}[kind]
     table = read_table(path)
     result = importer(session, client, path, table, mapping, filename=filename)
     pending.clear(client.id, kind)

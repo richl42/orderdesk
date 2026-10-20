@@ -198,6 +198,8 @@ class Order(SQLModel, table=True):
 
     export_batch_id: Optional[int] = Field(default=None, foreign_key="exportbatch.id", ondelete="SET NULL")
     exported_at: Optional[datetime] = utc_field()
+    # The order as the pipeline first made it, before any correction, for the internal "first pass exact" measure.
+    first_pass: Optional[dict] = Field(default=None, sa_column=Column(JSON, nullable=True))
 
 
 class OrderLine(SQLModel, table=True):
@@ -260,6 +262,7 @@ class StaffEntryUpload(SQLModel, table=True):
     uploaded_at: datetime = utc_field(required=True)
     mapping_id: Optional[int] = Field(default=None, foreign_key="columnmapping.id", ondelete="SET NULL")
     row_count: int = 0
+    summary: Optional[str] = None  # the client summary paragraph, once the operator has edited it
 
 
 class StaffEntryLine(SQLModel, table=True):

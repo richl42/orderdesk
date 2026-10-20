@@ -225,12 +225,23 @@ FIELDS: dict[str, dict[str, str]] = {
         "product_code": "Product code",
         "price": "Price",
     },
+    "staff_entries": {
+        "po_number": "PO number",
+        "account_code": "Account code",
+        "order_date": "Order date",
+        "product_code": "Product code",
+        "qty": "Quantity",
+        "unit": "Unit",
+        "unit_price": "Price",
+        "delivery_date": "Delivery date",
+    },
 }
 
 REQUIRED: dict[str, list[str]] = {
     "catalogue": ["product_code", "description"],
     "customers": ["account_code", "name"],
     "prices": ["price_band", "product_code", "price"],
+    "staff_entries": ["account_code", "product_code", "qty"],
 }
 
 # Header names (normalised, spaces removed) that mean each field.
@@ -263,6 +274,18 @@ HEADER_SYNONYMS: dict[str, dict[str, list[str]]] = {
         "price_band": ["priceband", "band", "pricelist", "pricelevel", "pricingband"],
         "product_code": ["stockcode", "sku", "productcode", "code", "itemcode", "item", "productref"],
         "price": ["price", "bandprice", "unitprice", "sellprice", "listprice"],
+    },
+    "staff_entries": {
+        "po_number": ["orderref", "custorderno", "customerorderno", "po", "ponumber", "pono", "yourref",
+                      "customerref", "purchaseorder", "custref", "reference", "ref"],
+        "account_code": ["account", "accountref", "accountcode", "accref", "customer", "customercode", "custcode",
+                         "acref", "accountno"],
+        "order_date": ["enteredon", "orderdate", "date", "dateentered", "documentdate", "entered", "datereceived"],
+        "product_code": ["item", "stockcode", "sku", "productcode", "code", "itemcode", "product", "partno"],
+        "qty": ["qty", "quantity", "orderqty", "qtyordered", "quantityordered"],
+        "unit": ["uom", "unit", "unitofsale", "sellunit", "units"],
+        "unit_price": ["price", "unitprice", "sellprice", "netprice"],
+        "delivery_date": ["duedate", "deliverydate", "requireddate", "despatchdate", "dateneeded", "reqdate"],
     },
 }
 
@@ -319,6 +342,8 @@ VALUE_FIELDS: dict[str, dict[str, list[str]]] = {
         "code": ["account_code"], "email": ["emails"], "band": ["price_band"], "text": ["name", "delivery_address"],
     },
     "prices": {"band": ["price_band"], "code": ["product_code"], "money": ["price"]},
+    "staff_entries": {"code": ["product_code", "account_code"], "whole": ["qty"], "money": ["unit_price"],
+                      "unit": ["unit"]},
 }
 
 

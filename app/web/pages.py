@@ -42,12 +42,3 @@ def trials_index(request: Request, session: Session = Depends(get_session)):
         "clients": clients, "nav": "trials", "title": "Trials",
         "intro": "Pick a client to see their shadow trial results.", "suffix": "trial",
     })
-
-
-@router.get("/clients/{client_id}/trial")
-def client_trial(client_id: str, request: Request, session: Session = Depends(get_session)):
-    client = get_client(session, client_id)
-    return templates.TemplateResponse(request, "not_built.html", {
-        "nav": "trials", "title": f"{client.name}: trial results",
-        "message": "Trial results are not built yet.",
-    })
