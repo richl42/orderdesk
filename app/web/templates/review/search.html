@@ -1,0 +1,10 @@
+{% if choices %}
+{% for c in choices %}
+<label class="choice">
+  <input type="radio" name="product_code" value="{{ c.code }}" data-sell="{{ c.sell }}" data-inner="{{ c.inner }}">
+  <span><span class="mono">{{ c.code }}</span> · {{ c.description }}</span>
+</label>
+{% endfor %}
+{% elif query | length >= 2 %}
+<p class="hint">Nothing in the catalogue matches "{{ query }}".</p>
+{% endif %}

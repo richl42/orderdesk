@@ -25,8 +25,12 @@ from pipeline.normalise import description_key
 from pipeline.vocab import DEFAULT_RULES, Classification, MatchMethod, Status
 
 READING, READ, DONE, FAILED = "reading", "read", "done", "failed"
-# Order-level flags this step writes; they are replaced each time an order is matched.
+# Flags that scoring writes. They are worked out again every time an order is scored.
 SUMMARY_CODES = {"line_problem", "line_check"}
+ORDER_CHECK_CODES = {"duplicate", "cutoff", "minimum_order", "po_missing", "delivery_past", "date_unclear"}
+LINE_CHECK_CODES = {"price_difference", "no_price", "qty_outlier"}
+# Flags from customer matching, dropped when the operator chooses the customer.
+CUSTOMER_CODES = {"unknown_customer", "customer_by_name", "customer_conflict"}
 
 _locks: dict[str, threading.Lock] = {}
 _locks_guard = threading.Lock()
@@ -136,23 +140,19 @@ def match_order(session: Session, order: Order) -> None:
 
     who = customers.match_customer(order.sender_email, order.customer_name_raw, _customers(session, client.id))
     order.customer_id, order.customer_match_method = who.customer_id, who.method
-    customer = session.get(Customer, who.customer_id) if who.customer_id else None
-    if customer is not None and customer.client_id != client.id:
-        customer = None
-    base_flags = [f for f in order.flags or [] if f.get("code") not in SUMMARY_CODES]
+    customer = _customer(session, client.id, who.customer_id)
+    base_flags = [f for f in order.flags or [] if f.get("code") not in SUMMARY_CODES | CUSTOMER_CODES]
     order_flags = [*base_flags, *who.flags]
 
     lines = session.exec(scoped(OrderLine, client.id).where(OrderLine.order_id == order.id)
                          .order_by(OrderLine.line_no)).all()
     calls = []
-    line_results: list[tuple[int, str, list[dict]]] = []
 
     if order.classification == Classification.NEW_ORDER and lines:
         catalogue, rows = _catalogue(session, client.id)
         aliases = _aliases(session, client.id)
         synonyms = client.unit_synonyms or {}
         unit_words = {w for words in synonyms.values() for w in words} | set(synonyms)
-        band = _band_prices(session, client.id, customer.price_band if customer else None)
 
         inputs: dict[int, products.LineIn] = {}
         matches: dict[int, products.LineMatch] = {}
@@ -175,15 +175,11 @@ def match_order(session: Session, order: Order) -> None:
             session.commit()
             return
 
-        check_lines = []
         used_aliases = set()
         for line in lines:
             match = matches.get(line.line_no)
             if match is None:
-                line.status = Status.PROBLEM
-                line_results.append((line.line_no, line.status, line.flags))
-                check_lines.append(checks.CheckLine(line.line_no, None, None, None, line.requested_price))
-                continue
+                continue  # stays Problem with the flags from reading
             flags = [*line.flags, *match.flags]
             key = description_key(products.phrase_for(inputs[line.line_no], unit_words))
             line.candidates = (match.candidates or catalogue.candidates(key))[:products.CANDIDATES_KEPT]
@@ -196,7 +192,6 @@ def match_order(session: Session, order: Order) -> None:
                 else:
                     flags.append(status_flag("ai_suggested", f"Suggested match, please confirm{why}", Status.CHECK))
             item = catalogue.items.get(match.product_code) if match.product_code else None
-            converted = False
             if line.requested_qty and not units.quantity_plausible(line.source_span, line.requested_qty, unit_words):
                 flags.append(status_flag("qty_check", f"Check the quantity: {line.requested_qty} was read from "
                                          f"'{line.source_span}'", Status.CHECK))
@@ -204,31 +199,10 @@ def match_order(session: Session, order: Order) -> None:
                 conversion = units.convert(line.requested_qty, line.requested_unit, item, synonyms,
                                            match.unit_hint, bool(rules.get("convert_units", True)))
                 line.qty, line.unit, line.conversion_note = conversion.qty, conversion.unit, conversion.note
-                converted = conversion.note is not None
                 flags += conversion.flags
-                row = rows[item.code]
-                line.unit_price = band.get(item.code, row.price)
                 if match.alias_id:
                     used_aliases.add(match.alias_id)
             line.flags = flags
-            check_lines.append(checks.CheckLine(line.line_no, line.product_code, line.qty, line.unit_price,
-                                                line.requested_price, item.pack_size if item else None, converted))
-
-        facts = checks.OrderFacts(order.received_at, order.customer_id, order.po_number, order.content_hash,
-                                  order.requested_delivery_date, order.requested_delivery_raw, check_lines)
-        found_order_flags, found_line_flags = checks.run_checks(facts, rules, _earlier(session, order),
-                                                                _largest_before(session, order))
-        order_flags += found_order_flags
-        allow_ai_ready = bool(rules.get("allow_ai_ready", False))
-        for line in lines:
-            match = matches.get(line.line_no)
-            if match is None:
-                continue
-            line.flags = [*line.flags, *found_line_flags.get(line.line_no, [])]
-            line.status = status.line_status(line.product_code, line.match_method, line.flags, allow_ai_ready,
-                                             match.score, match.ambiguous)
-            line_results.append((line.line_no, line.status, line.flags))
-        for line in lines:
             session.add(line)
 
         now = datetime.now(timezone.utc)
@@ -238,13 +212,8 @@ def match_order(session: Session, order: Order) -> None:
             alias.last_used_at = now
             session.add(alias)
 
-    line_results.sort()
-    order_flags = status.line_summary_flags(line_results) + order_flags
-    result = status.order_status(order.classification, order.classification is None,
-                                 status.customer_status(who.customer_id, who.method),
-                                 [s for _, s, _ in line_results], order_flags)
     order.flags = order_flags
-    order.status = result
+    result = score_order(session, client, order, lines)
     if order.initial_status is None:
         order.initial_status = result  # set once by the pipeline, never changed
 
@@ -269,3 +238,68 @@ def match_order(session: Session, order: Order) -> None:
            ai_output_tokens=order.ai_output_tokens,
            ai_cost_gbp=str(order.ai_cost_gbp) if order.ai_cost_gbp is not None else None)
     session.commit()
+
+
+# ---------------------------------------------------------------- scoring (also run after every review edit)
+
+
+def _customer(session: Session, client_id: str, customer_id: int | None) -> Customer | None:
+    customer = session.get(Customer, customer_id) if customer_id else None
+    return customer if customer is not None and customer.client_id == client_id else None
+
+
+def _ai_score(line: OrderLine) -> int | None:
+    return next((c.get("score") for c in line.candidates or [] if c.get("product_code") == line.product_code), None)
+
+
+def score_order(session: Session, client: Client, order: Order, lines: list[OrderLine]) -> str:
+    """Prices, checks and statuses for an order whose customer and lines are set. No AI.
+
+    Run after matching, and again after every change on the review screen. Returns the status
+    the order would have, and sets it unless the order is already Approved, Exported or Pass on.
+    """
+    rules = {**DEFAULT_RULES, **(client.rules or {})}
+    customer = _customer(session, client.id, order.customer_id)
+    order_flags = [f for f in order.flags or [] if f.get("code") not in SUMMARY_CODES | ORDER_CHECK_CODES]
+    line_results: list[tuple[int, str, list[dict]]] = []
+
+    if order.classification == Classification.NEW_ORDER and lines:
+        items = {r.product_code: r for r in session.exec(scoped(CatalogueItem, client.id)).all()}
+        band = _band_prices(session, client.id, customer.price_band if customer else None)
+        check_lines = []
+        for line in lines:
+            line.flags = [f for f in line.flags or [] if f.get("code") not in LINE_CHECK_CODES]
+            item = items.get(line.product_code) if line.product_code else None
+            line.unit_price = band.get(item.product_code, item.price) if item else None
+            check_lines.append(checks.CheckLine(line.line_no, line.product_code if item else None, line.qty,
+                                                line.unit_price, line.requested_price,
+                                                item.pack_size if item else None, line.conversion_note is not None))
+        facts = checks.OrderFacts(order.received_at, order.customer_id, order.po_number, order.content_hash,
+                                  order.requested_delivery_date, order.requested_delivery_raw, check_lines)
+        found_order_flags, found_line_flags = checks.run_checks(facts, rules, _earlier(session, order),
+                                                                _largest_before(session, order))
+        order_flags += found_order_flags
+        allow_ai_ready = bool(rules.get("allow_ai_ready", False))
+        for line in lines:
+            line.flags = [*line.flags, *found_line_flags.get(line.line_no, [])]
+            if line.product_code and line.product_code not in items:
+                line.flags.append(status_flag("unknown_product", f"{line.product_code} is no longer in the catalogue",
+                                              Status.PROBLEM))
+            if line.product_code and line.qty is None and not status.has_severity(line.flags, Status.PROBLEM):
+                line.flags.append(status_flag("no_quantity", "No quantity yet", Status.PROBLEM))
+            line.status = status.line_status(line.product_code, line.match_method, line.flags, allow_ai_ready,
+                                             _ai_score(line),
+                                             any(f.get("code") == "ai_ambiguous" for f in line.flags))
+            line_results.append((line.line_no, line.status, line.flags))
+            session.add(line)
+
+    line_results.sort()
+    order_flags = status.line_summary_flags(line_results) + order_flags
+    result = status.order_status(order.classification, order.classification is None,
+                                 status.customer_status(order.customer_id, order.customer_match_method),
+                                 [s for _, s, _ in line_results], order_flags)
+    order.flags = order_flags
+    if order.status not in (Status.APPROVED, Status.EXPORTED, Status.PASS_ON) or order.initial_status is None:
+        order.status = result
+    session.add(order)
+    return result

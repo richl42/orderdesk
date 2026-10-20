@@ -1,7 +1,4 @@
-"""Screen 3: one client's order queue (upload, paste, the orders table) and a read-only order page.
-
-The order page is a stand-in for screen 4 (review), which Milestone 5 builds.
-"""
+"""Screen 3: one client's order queue (upload, paste, the orders table), and each order's original file."""
 
 from __future__ import annotations
 
@@ -14,31 +11,17 @@ from fastapi.responses import FileResponse, RedirectResponse
 from sqlmodel import Session, func, select
 
 from app.db import get_session
-from app.models import CatalogueItem, Client, Customer, Order, OrderLine, OutputTemplate
+from app.models import Client, Customer, Order, OrderLine, OutputTemplate
 from app.orders import service
 from app.web.format import london
 from app.web.pages import get_client
 from app.web.summaries import WAITING, london_day_bounds, order_issue, summarise_client
 from app.web.templating import templates
 from pipeline.normalise import split_emails
-from pipeline.vocab import (
-    CLASSIFICATION_LABELS,
-    MATCH_METHOD_LABELS,
-    SOURCE_LABELS,
-    STATUS_LABELS,
-    Classification,
-    Status,
-)
+from pipeline.vocab import SOURCE_LABELS, STATUS_LABELS, Status
 from pipeline.workdays import LONDON
 
 router = APIRouter()
-
-CUSTOMER_HOW = {
-    "email": "Recognised by their email address",
-    "domain": "Recognised by their email domain",
-    "name": "Recognised by the name in the order only",
-    "operator": "Chosen by you",
-}
 
 FILTERS = [
     ("all", "All"),
@@ -312,77 +295,7 @@ def retry(client_id: str, order_id: int, request: Request, session: Session = De
     return RedirectResponse(f"/clients/{client.id}/orders/{order_id}", status_code=303)
 
 
-# ---------------------------------------------------------------- one order (read-only until Milestone 5)
-
-
-@dataclass
-class Segment:
-    text: str
-    line_no: int | None = None
-    css: str = ""
-
-
-def line_css(line: OrderLine) -> str:
-    return f"hl-{line.status.replace('_', '-')}" if line.status else "hl-read"
-
-
-def highlight_segments(text: str, lines: list[OrderLine]) -> list[Segment]:
-    """Split the order text so each line's source_span can be highlighted where it came from."""
-    marks: list[tuple[int, int, OrderLine]] = []
-    cursor = 0
-    for line in sorted(lines, key=lambda ln: ln.line_no):
-        span = line.source_span
-        if not span:
-            continue
-        start = text.find(span, cursor)
-        if start < 0:
-            start = text.find(span)
-        if start < 0:
-            continue
-        end = start + len(span)
-        if any(s < end and start < e for s, e, _ in marks):
-            continue  # overlaps another line's highlight
-        marks.append((start, end, line))
-        cursor = end
-    marks.sort(key=lambda m: m[0])
-    segments: list[Segment] = []
-    pos = 0
-    for start, end, line in marks:
-        if start > pos:
-            segments.append(Segment(text[pos:start]))
-        segments.append(Segment(text[start:end], line.line_no, line_css(line)))
-        pos = end
-    if pos < len(text):
-        segments.append(Segment(text[pos:]))
-    return segments
-
-
-@router.get("/clients/{client_id}/orders/{order_id}")
-def order_page(client_id: str, order_id: int, request: Request, session: Session = Depends(get_session)):
-    client = get_client(session, client_id)
-    order = get_order(session, client, order_id)
-    lines = session.exec(select(OrderLine).where(OrderLine.client_id == client.id, OrderLine.order_id == order.id)
-                         .order_by(OrderLine.line_no)).all()
-    customer = session.get(Customer, order.customer_id) if order.customer_id else None
-    codes = [ln.product_code for ln in lines if ln.product_code]
-    descriptions = dict(session.exec(select(CatalogueItem.product_code, CatalogueItem.description).where(
-        CatalogueItem.client_id == client.id, CatalogueItem.product_code.in_(codes))).all()) if codes else {}
-    classification = CLASSIFICATION_LABELS.get(Classification(order.classification)) \
-        if order.classification else None
-    return templates.TemplateResponse(request, "orders/order.html", {
-        "client": client, "order": order, "lines": lines, "nav": "orders",
-        "pill": order_pill(order),
-        "segments": highlight_segments(order.raw_text or "", lines),
-        "customer": customer if customer and customer.client_id == client.id else None,
-        "classification": classification,
-        "came_as": SOURCE_LABELS.get(order.source_type, order.source_type),
-        "has_original": bool(order.stored_path) and Path(order.stored_path).exists(),
-        "line_css": line_css,
-        "descriptions": descriptions,
-        "match_labels": MATCH_METHOD_LABELS,
-        "customer_how": CUSTOMER_HOW.get(order.customer_match_method or "", ""),
-        "reading": order.processing_state in (service.READING, service.READ),
-    })
+# ---------------------------------------------------------------- the original file
 
 
 @router.get("/clients/{client_id}/orders/{order_id}/original")

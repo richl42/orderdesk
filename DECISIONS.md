@@ -102,3 +102,22 @@ Assumptions made while building, one line each. Agreed with Rich on 19 Oct 2026 
 - The test suite replays the saved AI answers for the 20 demo orders (tests/fixtures/demo_ai_answers/, invented demo data only), so it checks every step after the AI without calling it. After any prompt change: make eval ARGS="--save-test-answers".
 - Answer key changes: order 04 now expects delivery wording "as normal" and its date_unclear flag; order 15's unknown product uses the flag code unknown_product.
 - A Ready order's reason line says "Everything matched and checked. Approve to add it to the export".
+
+## Milestone 5
+- The review screen lives at /clients/<id>/orders/<order id> (replacing the read-only page); "Start reviewing" opens the oldest order needing review.
+- Every change saves straight away and re-scores the order in code (prices, checks, statuses), with no AI call. initial_status never changes. Each change is one correction and is logged as an Event.
+- A product the operator picks or confirms (including confirming the AI's suggestion) is "Chosen by you" and clears that line's earlier flags. Price and outlier checks still run on it, so a written price that differs stays a Check after confirming.
+- The quantity is entered in the product's sell unit or, where it has one, its inner unit; code converts it, and a remainder is refused with the reason, leaving the line as it was.
+- A customer chosen by the operator counts as confident. Choosing "no customer" makes the order Problem again.
+- Approve is refused, on the server as well as the button, while there is no customer, no lines, or any Problem line. Check orders can be approved: the operator has looked at them.
+- Remembered phrases are saved on approval, not on each edit, so abandoned changes teach nothing. One is saved for each line the operator picked or confirmed with "Remember this" ticked (the default). It replaces any earlier phrase this customer used for the same words. The unit is remembered only when the customer wrote none (the unit used, or the inner unit when it was converted).
+- Review time is the time the review page was open, measured in the browser and sent with the approval, capped at 2 hours per visit and added up over visits.
+- Approving opens the next order needing review in queue order (oldest first, wrapping round), or the queue when none is left.
+- "Not an order" marks an order Pass on, and "It is an order" brings it back; a message the AI read as not an order then becomes a new order whose lines are added by hand.
+- An order whose text could not be read (a scanned PDF) can have its lines typed in with Add a line; that clears the scanned or unreadable flag, and the order is then checked like any other.
+- An order from someone who is not a customer (Brightside Lettings in the demo) can't be approved; it goes to the client contact (Ask client contact, then Not an order). So the demo review ends with 17 approved and 3 passed on.
+- Ask client contact copies a ready-written email (To, Subject, the issues in plain words) to the clipboard, and opens it in the mail app if copying isn't possible.
+- "Undo approval" reopens an approved order until it is exported.
+- Download this order is shown but waits for Milestone 6.
+- Catalogue search on the review screen lists products whose description contains every word typed, or whose words are close spellings of the words typed, and codes or barcodes starting with what was typed. Only this client's products.
+- Keyboard: A approves, N opens the next order, 1 to 5 picks a product on the open line and saves it, Escape closes the open line. Letters and numbers do nothing while typing in a box.

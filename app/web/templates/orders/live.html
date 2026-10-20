@@ -23,7 +23,7 @@
         <div class="flow-title">Review and approve</div>
         <div class="flow-main">{{ q.waiting }} waiting for your approval</div>
         <div class="flow-sub">{{ q.need_fix }} need a fix first</div>
-        {% if q.start_href %}<a class="flow-link" href="{{ q.start_href }}">Start reviewing</a>{% endif %}
+        {% if q.start_href %}<a class="flow-link" href="/clients/{{ client.id }}/review">Start reviewing</a>{% endif %}
       </div>
     </li>
     <li class="flow-step">

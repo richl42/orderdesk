@@ -429,3 +429,63 @@ p { margin: 0; }
   display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px;
   border-radius: 6px; font-family: var(--mono); font-size: 12px;
 }
+
+/* ---------- review one order ---------- */
+
+.review-area { display: flex; flex-direction: column; gap: 28px; padding-bottom: 8px; }
+.head-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pad { padding: 0 20px 16px; }
+.made { display: flex; flex-direction: column; gap: 16px; }
+.made-field { display: flex; flex-direction: column; gap: 4px; }
+.control {
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--control-border); border-radius: var(--radius-sm);
+  font: inherit; font-size: 15px; color: var(--text); background: var(--card); width: 100%;
+}
+.hint.ok { color: var(--ready-fg); }
+.hint.ok::before { content: "✓ "; }
+.hint.warn { color: var(--check-fg); }
+.lines-table td { vertical-align: top; }
+.line-edit-row td { border-top: none; background: var(--bg); }
+.line-edit { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 8px; }
+.picker { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.choices { display: flex; flex-direction: column; gap: 4px; }
+.choice {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 12px; border-radius: var(--radius-sm);
+  background: var(--card); border: 1px solid var(--border-soft); cursor: pointer;
+}
+.choice input { width: 20px; height: 20px; accent-color: var(--primary); flex: none; }
+.choice:has(input:checked) { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.key-hint {
+  display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px;
+  background: var(--muted); font-family: var(--mono); font-size: 11px; color: var(--text-3);
+}
+.search-field { max-width: 480px; margin-top: 6px; }
+.field input[type="search"] {
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--control-border); border-radius: var(--radius-sm);
+  font: inherit; font-size: 15px; color: var(--text); background: var(--card); width: 100%;
+}
+.edit-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; }
+.qty-field { width: 140px; }
+.unit-field { min-width: 220px; }
+.unit-field select { min-height: 44px; }
+.remember { flex: 1 1 260px; }
+.edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.split-half { flex: 1 1 420px; min-width: 0; }
+.checks-list { list-style: none; margin: 0; padding: 8px 20px 16px; display: flex; flex-direction: column; gap: 6px; }
+.checks-list li { display: flex; align-items: flex-start; gap: 10px; min-height: 28px; }
+.check-icon {
+  flex: none; width: 22px; height: 22px; border-radius: 999px; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 13px; font-weight: 600;
+}
+.check-ok .check-icon { background: var(--ready-bg); color: var(--ready-fg); }
+.check-warn .check-icon { background: var(--check-bg); color: var(--check-fg); }
+.review-bar {
+  position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 10px 16px; padding: 14px 20px; background: var(--card);
+  border: 2px solid var(--primary); border-radius: var(--radius); box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+}
+.bar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.bar-actions form { margin: 0; }
+.review-bar .why { flex-basis: 100%; text-align: right; }
+.timer { color: var(--text-3); font-size: 14px; }
+@media (max-width: 640px) { .review-bar { position: static; } .review-bar .why { text-align: left; } }

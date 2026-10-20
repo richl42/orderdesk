@@ -1,0 +1,257 @@
+{# The whole review area. Every change on the page gets this back, so nothing goes out of date. #}
+{% set base = "/clients/" ~ client.id ~ "/orders/" ~ order.id %}
+{% set who = (v.customer.name if v.customer else None) or order.customer_name_raw or order.sender_email or "Unknown sender" %}
+<div id="review-area" class="review-area" data-order="{{ order.id }}"
+     {% if reading %}hx-get="{{ base }}" hx-trigger="every 2s" hx-select="#review-area" hx-swap="outerHTML"{% endif %}>
+
+<div class="page-head">
+  <div>
+    <div class="breadcrumb"><a href="/">Clients</a> / <a href="/clients/{{ client.id }}/orders">{{ client.name }}</a> / {% if order.po_number %}PO {{ order.po_number }}{% else %}Order {{ order.id }}{% endif %}</div>
+    <div class="title-row" style="margin-top: 6px">
+      <h1>{% if order.po_number %}PO {{ order.po_number }} · {% endif %}{{ who }}</h1>
+      <span class="pill {{ pill.css }}">{{ pill.label }}</span>
+      {% set needing = v.lines | selectattr("line.status", "ne", "ready") | list | length %}
+      {% if v.editable and needing %}<span class="muted">{{ needing }} line{{ "" if needing == 1 else "s" }} need{{ "s" if needing == 1 else "" }} you</span>{% endif %}
+    </div>
+    <p class="lede">Arrived {{ order.received_at | moment }} by {{ came_as | lower }}{% if order.processing_ms is not none %} · Read in {{ (order.processing_ms / 1000) | round(1) }} seconds{% endif %} · {% if order.ai_cost_gbp is not none %}AI cost {{ "%.1f" | format(order.ai_cost_gbp * 100) }}p{% else %}AI {{ order.ai_input_tokens + order.ai_output_tokens }} tokens{% endif %}{% if v.position %} · Order {{ v.position[0] }} of {{ v.position[1] }} waiting{% endif %}</p>
+  </div>
+  <div class="head-actions">
+    <a class="btn btn-secondary" href="/clients/{{ client.id }}/orders">Back to queue</a>
+    {% if v.next_href %}<a class="btn btn-secondary" href="{{ v.next_href }}" id="next-order" aria-keyshortcuts="N">Next order</a>{% endif %}
+  </div>
+</div>
+
+<div class="notices" role="status" aria-live="polite">
+  {% if v.notice %}<div class="notice notice-ready">{{ v.notice }}</div>{% endif %}
+  {% if v.error %}<div class="notice notice-problem">{{ v.error }}</div>{% endif %}
+  {% if reading %}<div class="notice notice-check">Still reading this order…</div>{% endif %}
+  {% if order.status == "approved" %}<div class="notice notice-ready">Approved{% if order.approved_at %} {{ order.approved_at | moment }}{% endif %}. It goes in the next export.</div>{% endif %}
+  {% if order.status == "exported" %}<div class="notice notice-ready">Exported. It can no longer be changed.</div>{% endif %}
+  {% if order.status == "pass_on" %}<div class="notice notice-check">Not a new order{% if classification and order.classification != "new_order" %} ({{ classification | lower }}){% endif %}{% if order.classification_reason %}: {{ order.classification_reason }}{% endif %}. Pass it to the client contact.</div>{% endif %}
+</div>
+
+<div class="split">
+  <section class="card split-left" aria-labelledby="sent-title">
+    <div class="card-head">
+      <h2 id="sent-title">What they sent</h2>
+      <a class="btn btn-secondary" href="{{ base }}/original" target="_blank" rel="noopener">Open the original file</a>
+    </div>
+    <dl class="facts">
+      <div><dt>{{ came_as }}</dt><dd>{% if order.original_filename %}<span class="mono">{{ order.original_filename }}</span>{% endif %}</dd></div>
+      <div><dt>From</dt><dd>{{ order.sender_email or "Not known" }}</dd></div>
+      {% if order.subject %}<div><dt>Subject</dt><dd>{{ order.subject }}</dd></div>{% endif %}
+      <div><dt>Received</dt><dd>{{ order.received_at | moment }}</dd></div>
+    </dl>
+    {% if order.raw_text %}
+    <pre class="order-text">{% for seg in segments %}{% if seg.line_no %}<mark class="{{ seg.css }}" title="Line {{ seg.line_no }}"><span class="visually-hidden">[line {{ seg.line_no }}] </span>{{ seg.text }}</mark>{% else %}{{ seg.text }}{% endif %}{% endfor %}</pre>
+    <p class="hint pad">Highlights show which part of the message each order line came from.</p>
+    {% else %}
+    <p class="empty">{% if reading %}Reading…{% else %}No text could be read from this file. Open the original and add its lines below.{% endif %}</p>
+    {% endif %}
+  </section>
+
+  <section class="card split-right" aria-labelledby="made-title">
+    <div class="card-head"><h2 id="made-title">What the system made of it</h2></div>
+    <div class="card-body made">
+      {% if order.classification and order.classification != "new_order" %}
+      <p class="hint">Read as: {{ classification }}{% if order.classification_reason %}. {{ order.classification_reason }}{% endif %}</p>
+      {% endif %}
+
+      <div class="made-field">
+        <div class="label-strong">Customer</div>
+        {% if v.editable %}
+        <form hx-post="{{ base }}/customer" hx-trigger="change" hx-target="#review-area" hx-swap="outerHTML" method="post" action="{{ base }}/customer">
+          <label class="visually-hidden" for="customer-select">Customer</label>
+          <select id="customer-select" name="customer_id" class="control">
+            <option value="" {% if not v.customer %}selected{% endif %}>Choose the customer…</option>
+            {% for cid, label in v.customer_options %}<option value="{{ cid }}" {% if v.customer and v.customer.id == cid %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </form>
+        {% else %}
+        <div>{% if v.customer %}{{ v.customer.name }} <span class="mono">{{ v.customer.account_code }}</span>{% else %}Not recognised{% endif %}</div>
+        {% endif %}
+        {% if v.customer %}<div class="hint {{ 'ok' if order.customer_match_method in ('email', 'domain', 'operator') else 'warn' }}">{{ v.customer_how }}</div>{% endif %}
+        {% if order.customer_name_raw %}<div class="hint">The order says "{{ order.customer_name_raw }}"</div>{% endif %}
+      </div>
+
+      {% for field, label, kind, value, note in [
+          ("po_number", "PO number", "text", order.po_number or "", v.po_note),
+          ("requested_delivery_date", "Delivery date", "date", order.requested_delivery_date.isoformat() if order.requested_delivery_date else "", ('They wrote "' ~ order.requested_delivery_raw ~ '"') if order.requested_delivery_raw else ""),
+          ("delivery_address", "Deliver to", "text", order.delivery_address or "", "" if order.delivery_address else ("From their account: " ~ v.customer.delivery_address if v.customer and v.customer.delivery_address else "")),
+          ("delivery_notes", "Delivery notes", "text", order.delivery_notes or "", ""),
+        ] %}
+      <div class="made-field">
+        <label class="label-strong" for="f-{{ field }}">{{ label }}</label>
+        {% if v.editable %}
+        <form hx-post="{{ base }}/header" hx-trigger="change" hx-target="#review-area" hx-swap="outerHTML" method="post" action="{{ base }}/header">
+          <input type="hidden" name="field" value="{{ field }}">
+          <input id="f-{{ field }}" class="control {{ 'mono' if field == 'po_number' else '' }}" type="{{ kind }}" name="value" value="{{ value }}" autocomplete="off">
+        </form>
+        {% else %}
+        <div id="f-{{ field }}">{% if field == "requested_delivery_date" and order.requested_delivery_date %}{{ order.requested_delivery_date | long_date }}{% else %}{{ value or "None" }}{% endif %}</div>
+        {% endif %}
+        {% if note %}<div class="hint {{ 'warn' if field == 'po_number' and note != 'Not seen before' else '' }}">{{ note }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{% if v.flags %}
+<section class="card" aria-labelledby="flags-title">
+  <div class="card-head"><h2 id="flags-title">Needs a look</h2></div>
+  <ul class="plain-list">
+    {% for f in v.flags %}
+    <li><span>{{ f.message }}</span><span class="pill {{ 'pill-problem' if f.severity == 'problem' else 'pill-check' }}">{{ "Problem" if f.severity == "problem" else "Check" }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if order.classification in ("new_order", none) or v.lines %}
+<section class="card" aria-labelledby="lines-title">
+  <div class="card-head">
+    <h2 id="lines-title">Lines ({{ v.lines | length }})</h2>
+    {% if v.editable %}
+    <form hx-post="{{ base }}/lines/add" hx-target="#review-area" hx-swap="outerHTML" method="post" action="{{ base }}/lines/add">
+      <button type="submit" class="btn btn-secondary">Add a line</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if v.lines %}
+  <div class="table-scroll">
+    <table class="data-table lines-table">
+      <thead>
+        <tr><th scope="col">#</th><th scope="col">They wrote</th><th scope="col">Matched product</th><th scope="col">Qty</th><th scope="col">Price</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Action</span></th></tr>
+      </thead>
+      <tbody>
+        {% for lv in v.lines %}
+        {% set line = lv.line %}
+        <tr class="line-row" id="line-{{ line.id }}">
+          <td class="muted-cell"><span class="line-key {{ line_css(line) }}">{{ line.line_no }}</span></td>
+          <td>{{ line.source_span or line.raw_text }}</td>
+          <td>{% if lv.item %}<span class="mono">{{ lv.item.product_code }}</span> {{ lv.item.description }}{% if lv.how %}<div class="hint">{{ lv.how }}</div>{% endif %}{% else %}<span class="muted">No product yet</span>{% endif %}</td>
+          <td class="nowrap">{% if line.qty is not none %}<span class="mono">{{ line.qty | qty }}</span> {{ line.unit | lower }}{% if line.conversion_note %}<div class="hint">{{ line.conversion_note }}</div>{% endif %}{% else %}<span class="muted">{{ line.requested_qty or "" }} {{ line.requested_unit or "" }}</span>{% endif %}</td>
+          <td class="mono nowrap">{{ line.unit_price | money if line.unit_price is not none else "" }}{% if line.requested_price is not none %}<div class="hint">They wrote {{ line.requested_price | money }}</div>{% endif %}</td>
+          <td>
+            <div class="status-cell">
+              <span class="pill pill-{{ (line.status or 'reading').replace('_', '-') }}">{{ status_label(line.status) }}</span>
+              {% for m in lv.messages %}<span class="status-note">{{ m }}</span>{% endfor %}
+            </div>
+          </td>
+          <td class="action-cell">
+            {% if v.editable and not lv.open %}
+            <a class="btn btn-secondary" href="{{ base }}/lines/{{ line.id }}/edit" hx-get="{{ base }}/lines/{{ line.id }}/edit" hx-target="#review-area" hx-swap="outerHTML">Change</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% if lv.open %}
+        <tr class="line-edit-row">
+          <td></td>
+          <td colspan="6">
+            <form class="line-edit" data-line="{{ line.id }}" method="post" action="{{ base }}/lines/{{ line.id }}"
+                  hx-post="{{ base }}/lines/{{ line.id }}" hx-target="#review-area" hx-swap="outerHTML">
+              <fieldset class="picker">
+                <legend class="label-strong">{% if lv.item %}Product{% else %}Pick the right product{% endif %}</legend>
+                <div class="choices" id="choices-{{ line.id }}">
+                  {% for c in lv.choices %}
+                  <label class="choice">
+                    <input type="radio" name="product_code" value="{{ c.code }}" data-sell="{{ c.sell }}" data-inner="{{ c.inner }}"
+                           {% if (lv.item and lv.item.product_code == c.code) or (not lv.item and loop.first) %}checked{% endif %}>
+                    <span><span class="key-hint" aria-hidden="true">{{ loop.index }}</span> <span class="mono">{{ c.code }}</span> · {{ c.description }}{% if c.note and c.note != "current" %} <span class="hint">({{ c.note }})</span>{% elif loop.first and not lv.item %} <span class="hint">(closest match)</span>{% endif %}</span>
+                  </label>
+                  {% endfor %}
+                </div>
+                <label class="field search-field">Search the whole catalogue
+                  <input type="search" name="q" autocomplete="off" placeholder="Type a product name or code"
+                         hx-get="/clients/{{ client.id }}/catalogue/search?line={{ line.id }}" hx-trigger="input changed delay:250ms, search"
+                         hx-target="#search-{{ line.id }}" hx-swap="innerHTML" hx-include="this">
+                </label>
+                <div class="choices" id="search-{{ line.id }}"></div>
+              </fieldset>
+              <div class="edit-row">
+                <label class="field qty-field">Quantity
+                  <input type="text" inputmode="decimal" name="qty" value="{{ lv.qty }}" required>
+                </label>
+                <label class="field unit-field">Unit
+                  {% set first = lv.choices | selectattr("code", "equalto", lv.item.product_code if lv.item else (lv.choices[0].code if lv.choices else "")) | first %}
+                  <select name="unit_choice" class="unit-select">
+                    <option value="sell" {% if lv.unit_choice == "sell" %}selected{% endif %}>{{ first.sell if first else "sell unit" }}</option>
+                    {% if not first or first.inner %}<option value="inner" {% if lv.unit_choice == "inner" %}selected{% endif %}>{{ first.inner if first else "inner unit" }}</option>{% endif %}
+                  </select>
+                </label>
+                {% if v.customer and line.source_span %}
+                <label class="check-row remember">
+                  <input type="checkbox" name="remember" value="on" {% if line.remember is none or line.remember %}checked{% endif %}>
+                  Remember this for {{ v.customer.name }} next time
+                </label>
+                {% endif %}
+              </div>
+              <div class="edit-actions">
+                <button type="submit" class="btn btn-primary">Save this line</button>
+                <button type="button" class="btn btn-secondary" hx-post="{{ base }}/lines/{{ line.id }}/delete" hx-target="#review-area" hx-swap="outerHTML" hx-confirm="Delete line {{ line.line_no }}?">Delete line</button>
+                <span class="hint">Keys 1 to 5 pick a product · Escape closes</span>
+              </div>
+            </form>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">No lines. Add a line for each product they asked for.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+<div class="split">
+  <section class="card split-half" aria-labelledby="checks-title">
+    <div class="card-head"><h2 id="checks-title">Checks</h2></div>
+    <ul class="checks-list">
+      {% for c in v.checks %}
+      <li class="{{ 'check-ok' if c.ok else 'check-warn' }}"><span class="check-icon" aria-hidden="true">{{ "✓" if c.ok else "!" }}</span><span class="visually-hidden">{{ "Passed: " if c.ok else "Needs a look: " }}</span>{{ c.text }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  <section class="card split-half" aria-labelledby="preview-title">
+    <div class="card-head"><h2 id="preview-title">Export preview: this order in {{ client.name }}'s format</h2></div>
+    <div class="card-body"><pre class="code-preview">{{ v.preview or "Nothing to export: this is not an order." }}</pre></div>
+  </section>
+</div>
+
+<textarea id="ask-text" class="visually-hidden" aria-hidden="true" tabindex="-1" readonly>To: {{ v.question.to }}
+Subject: {{ v.question.subject }}
+
+{{ v.question.body }}</textarea>
+
+<div class="review-bar" role="region" aria-label="Finish this order">
+  <div class="timer">Your review time on this order: <span id="review-timer" class="mono">0:00</span></div>
+  <div class="bar-actions">
+    {% if v.editable %}
+    <form hx-post="{{ base }}/pass-on" hx-target="#review-area" hx-swap="outerHTML" method="post" action="{{ base }}/pass-on">
+      <button type="submit" class="btn btn-secondary">Not an order</button>
+    </form>
+    {% elif order.status == "pass_on" %}
+    <form hx-post="{{ base }}/back-to-review" hx-target="#review-area" hx-swap="outerHTML" method="post" action="{{ base }}/back-to-review">
+      <button type="submit" class="btn btn-secondary">It is an order</button>
+    </form>
+    {% endif %}
+    <button type="button" class="btn btn-secondary" id="ask-client" data-mailto="mailto:{{ v.question.to }}?subject={{ v.question.subject | urlencode }}&body={{ v.question.body | urlencode }}">Ask client contact</button>
+    <button type="button" class="btn btn-secondary" disabled title="Downloading comes in Milestone 6">Download this order</button>
+    {% if order.status == "approved" %}
+    <form hx-post="{{ base }}/undo-approval" hx-target="#review-area" hx-swap="outerHTML" method="post" action="{{ base }}/undo-approval">
+      <button type="submit" class="btn btn-secondary">Undo approval</button>
+    </form>
+    {% elif v.editable %}
+    <form id="approve-form" hx-post="{{ base }}/approve" hx-target="#review-area" hx-swap="outerHTML" method="post" action="{{ base }}/approve">
+      <input type="hidden" name="seconds" value="">
+      <button type="submit" class="btn btn-primary" id="approve" aria-keyshortcuts="A" {% if v.approve_reasons %}disabled aria-describedby="approve-why"{% endif %}>Approve and add to export</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if v.editable and v.approve_reasons %}<div id="approve-why" class="hint why">Not yet: {{ v.approve_reasons | join(" ") }}</div>{% endif %}
+  <div id="copied" class="hint" role="status" aria-live="polite"></div>
+</div>
+</div>

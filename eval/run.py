@@ -75,43 +75,6 @@ def compare(ours: dict, answer: dict) -> list[str]:
     return diffs
 
 
-def standard_order(session, order) -> dict:
-    """An order in the standard internal shape (the same shape as the answer keys)."""
-    from sqlmodel import select
-
-    from app.models import Customer, OrderLine
-
-    customer = session.get(Customer, order.customer_id) if order.customer_id else None
-    lines = session.exec(select(OrderLine).where(OrderLine.client_id == order.client_id,
-                                                 OrderLine.order_id == order.id).order_by(OrderLine.line_no)).all()
-    return {
-        "order_id": order.id,
-        "classification": order.classification,
-        "customer": {"account_code": customer.account_code, "name": customer.name,
-                     "match_method": order.customer_match_method} if customer else None,
-        "po_number": order.po_number,
-        "received_at": order.received_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "requested_delivery_date": order.requested_delivery_date.isoformat() if order.requested_delivery_date else None,
-        "requested_delivery_raw": order.requested_delivery_raw,
-        "delivery_address": order.delivery_address,
-        "delivery_notes": order.delivery_notes,
-        "lines": [{
-            "line_no": ln.line_no,
-            "source_span": ln.source_span,
-            "product_code": ln.product_code,
-            "qty": str(ln.qty) if ln.qty is not None else None,
-            "unit": ln.unit,
-            "conversion_note": ln.conversion_note,
-            "unit_price": f"{ln.unit_price:.2f}" if ln.unit_price is not None else None,
-            "match_method": ln.match_method,
-            "status": ln.status,
-            "flags": ln.flags,
-        } for ln in lines],
-        "status": order.initial_status,
-        "flags": order.flags,
-    }
-
-
 def flag_codes(ours: dict) -> set[str]:
     codes = {f.get("code") for f in ours.get("flags") or []}
     for line in ours.get("lines") or []:
@@ -131,6 +94,7 @@ def run_demo(cache_dir: Path | None, only: str | None, ai=None) -> list[OrderRes
 
     from app import ai_client, db
     from app.orders import service
+    from app.orders.standard import standard_order
     from pipeline.ai import AnthropicAI
     from seed.demo_data import load_demo_client, write_demo_files
 
@@ -166,6 +130,7 @@ def run_demo(cache_dir: Path | None, only: str | None, ai=None) -> list[OrderRes
                 session.expire_all()
                 session.refresh(order)
                 ours = standard_order(session, order)
+                ours["status"] = order.initial_status
                 diffs = compare(ours, answer)
                 actual = order.initial_status
                 results.append(OrderResult(

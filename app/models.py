@@ -225,6 +225,7 @@ class OrderLine(SQLModel, table=True):
     status: Optional[str] = None
     flags: list = json_field(list)
     corrected_by_operator: bool = False
+    remember: Optional[bool] = None  # "Remember this for <customer> next time", saved as an alias on approval
 
 
 class Alias(SQLModel, table=True):

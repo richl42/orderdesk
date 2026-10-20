@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{% if order.po_number %}PO {{ order.po_number }}{% else %}Order {{ order.id }}{% endif %} · {{ client.name }} · Order Desk{% endblock %}
+{% block content %}
+{% include "review/area.html" %}
+<script src="/static/js/review.js" defer></script>
+{% endblock %}
