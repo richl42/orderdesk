@@ -257,8 +257,56 @@ class MappingGuess:
     unsure: list[str] = field(default_factory=list)  # columns whose headers told us nothing
 
 
-def guess_mapping(columns: list[str], kind: str) -> MappingGuess:
-    """Guess each column's meaning from its header. Each field is used at most once."""
+SELL_UNIT_WORDS = {"CASE", "CS", "BOX", "BX", "PACK", "PK", "EACH", "EA", "UNIT", "ROLL", "PAIR", "BAG",
+                   "BOTTLE", "TUB", "DRUM", "SLEEVE", "OUTER", "TRAY", "KG", "LITRE", "L"}
+
+
+def _value_kind(values: list[str]) -> str | None:
+    """What a column's values look like: barcode, email, money, whole, unit, band, code, text."""
+    values = [v for v in values if v][:50]
+    if not values:
+        return None
+
+    def share(test) -> float:
+        return sum(1 for v in values if test(v)) / len(values)
+
+    if share(lambda v: "@" in v) >= 0.8:
+        return "email"
+    if share(lambda v: v.isdigit() and len(v) in (8, 12, 13, 14)) >= 0.9:
+        return "barcode"
+    if share(lambda v: v.upper() in SELL_UNIT_WORDS) >= 0.9:
+        return "unit"
+    if share(lambda v: parse_whole_number(v) is not None and len(v) <= 5) >= 0.9:
+        return "whole"
+    if share(lambda v: parse_decimal(v) is not None) >= 0.9:
+        return "money"
+    if len(set(values)) <= 6 and share(lambda v: len(v) <= 2) >= 0.9:
+        return "band"
+    if share(lambda v: " " not in v.strip() and len(v) <= 20 and any(c.isdigit() for c in v)) >= 0.9:
+        return "code"
+    if share(lambda v: len(v.split()) >= 2) >= 0.7:
+        return "text"
+    return None
+
+
+# For columns whose header told us nothing: which field each value pattern suggests, best first.
+VALUE_FIELDS: dict[str, dict[str, list[str]]] = {
+    "catalogue": {
+        "code": ["product_code"], "text": ["description"], "unit": ["sell_unit"], "whole": ["pack_size"],
+        "money": ["price"], "barcode": ["barcode"],
+    },
+    "customers": {
+        "code": ["account_code"], "email": ["emails"], "band": ["price_band"], "text": ["name", "delivery_address"],
+    },
+    "prices": {"band": ["price_band"], "code": ["product_code"], "money": ["price"]},
+}
+
+
+def guess_mapping(columns: list[str], kind: str, rows: list[dict[str, str]] | None = None) -> MappingGuess:
+    """Guess each column's meaning from its header, then from its values. Each field is used at most once.
+
+    Columns guessed from values alone are still listed as unsure, so the screen can ask for a check.
+    """
     synonyms = HEADER_SYNONYMS[kind]
     mapping = {col: IGNORE for col in columns}
     taken: set[str] = set()
@@ -270,7 +318,32 @@ def guess_mapping(columns: list[str], kind: str) -> MappingGuess:
                 taken.add(fld)
                 break
     unsure = [col for col in columns if mapping[col] == IGNORE]
+
+    if rows:
+        for col in unsure:
+            kind_of_values = _value_kind([r.get(col, "") for r in rows])
+            for fld in VALUE_FIELDS[kind].get(kind_of_values or "", []):
+                if fld not in taken:
+                    mapping[col] = fld
+                    taken.add(fld)
+                    break
     return MappingGuess(mapping=mapping, unsure=unsure)
+
+
+def duplicate_values(rows: list[dict[str, str]], column: str | None) -> list[str]:
+    """Values that appear more than once in a column, in first-seen order."""
+    if not column:
+        return []
+    seen: set[str] = set()
+    dupes: list[str] = []
+    for row in rows:
+        value = (row.get(column) or "").strip()
+        if not value:
+            continue
+        if value in seen and value not in dupes:
+            dupes.append(value)
+        seen.add(value)
+    return dupes
 
 
 def missing_required(mapping: dict[str, str], kind: str) -> list[str]:

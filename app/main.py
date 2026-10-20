@@ -10,7 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app import auth
 from app.db import get_engine
-from app.web import pages
+from app.web import pages, setup
 from app.web.templating import templates
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -33,6 +33,7 @@ def create_app() -> FastAPI:
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.include_router(auth.router)
     app.include_router(pages.router)
+    app.include_router(setup.router)
 
     @app.exception_handler(404)
     async def not_found(request: Request, exc):

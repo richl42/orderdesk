@@ -140,3 +140,21 @@ def test_output_template_without_header_and_iso_dates(tmp_path):
     assert guess.decimal_places == 3
     assert guess.delimiter == "\t"
     assert all(v == {"blank": True} for v in guess.fill.values())
+
+
+def test_unclear_headers_are_guessed_from_values():
+    rows = [
+        {"A": "TOW-310", "B": "Blue roll 2ply, pack of 6", "C": "PACK", "D": "6", "E": "14.40", "F": "5069990000440"},
+        {"A": "TOW-311", "B": "Blue roll 2ply, single roll", "C": "EACH", "D": "1", "E": "2.60", "F": "5069990000457"},
+    ]
+    guess = guess_mapping(list("ABCDEF"), "catalogue", rows)
+    assert guess.mapping == {"A": "product_code", "B": "description", "C": "sell_unit", "D": "pack_size",
+                             "E": "price", "F": "barcode"}
+    assert set(guess.unsure) == set("ABCDEF")  # still shown to the operator as guesses to check
+
+
+def test_customer_values_guessing():
+    rows = [{"Ref": "RIVERS01", "Who": "Riverside Hotel", "Contact": "a@b.example", "Lvl": "A"},
+            {"Ref": "MILLLN01", "Who": "Mill Lane Café", "Contact": "c@d.example", "Lvl": "B"}]
+    guess = guess_mapping(["Ref", "Who", "Contact", "Lvl"], "customers", rows)
+    assert guess.mapping == {"Ref": "account_code", "Who": "name", "Contact": "emails", "Lvl": "price_band"}

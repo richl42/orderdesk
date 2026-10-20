@@ -1,0 +1,106 @@
+{% from "setup/macros.html" import section_head, messages, file_icon, upload_form %}
+{% if oob %}{% include "setup/steps.html" %}{% endif %}
+{% set base = "/clients/%s/setup/output" % client.id %}
+{% set o = output %}
+<section id="sec-output" class="card setup-section">
+  <a id="output" class="anchor"></a>
+  {{ section_head(4, "Output format", "An example of what a finished order looks like in their system. For each of their columns, pick what fills it.", done="output" in client.setup_done) }}
+  {{ messages(o.error, o.notice) }}
+
+  {% if not o.has_file %}
+    {{ upload_form(base ~ "/upload", "#sec-output", ".csv,.txt", "Upload an example import file from their system (CSV)") }}
+  {% else %}
+    <div class="file-row">
+      <div class="file-name">
+        {{ file_icon() }}
+        <div>
+          <div class="mono">{{ o.filename }}</div>
+          <div class="small muted">{{ o.rows | length }} columns found{% if o.is_pending %}. Check them below, then save.{% endif %}</div>
+        </div>
+      </div>
+      <div class="file-actions">
+        {% if o.is_pending %}
+        <form method="post" action="{{ base }}/discard" hx-post="{{ base }}/discard" hx-target="#sec-output" hx-swap="outerHTML">
+          <button class="btn btn-secondary" type="submit">Discard this file</button>
+        </form>
+        {% endif %}
+        <details class="replace">
+          <summary class="btn btn-secondary">Replace file</summary>
+          {{ upload_form(base ~ "/upload", "#sec-output", ".csv,.txt", "New example file") }}
+        </details>
+      </div>
+    </div>
+
+    <form method="post" action="{{ base }}/save" hx-post="{{ base }}/save" hx-target="#sec-output" hx-swap="outerHTML"
+          hx-trigger="submit">
+      <div class="table-box">
+        <table class="map-table">
+          <thead><tr><th scope="col">Their column</th><th scope="col">Filled with</th><th scope="col">Example from their file</th></tr></thead>
+          <tbody>
+          {% for row in o.rows %}
+            <tr>
+              <td class="mono">{{ row.column }}</td>
+              <td>
+                <div class="fill-cell">
+                  <select name="fill_{{ row.index }}" aria-label="What fills {{ row.column }}"
+                          hx-post="{{ base }}/preview" hx-trigger="change" hx-include="closest form" hx-sync="closest form:replace" hx-target="#sec-output" hx-swap="outerHTML">
+                    {% for value, label in output_fields.items() %}
+                    <option value="{{ value }}" {% if row.kind == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                    <option value="fixed" {% if row.kind == "fixed" %}selected{% endif %}>A fixed value</option>
+                    <option value="blank" {% if row.kind == "blank" %}selected{% endif %}>Leave blank</option>
+                  </select>
+                  {% if row.kind == "fixed" %}
+                  <input type="text" name="fixed_{{ row.index }}" value="{{ row.fixed }}" aria-label="Fixed value for {{ row.column }}"
+                         placeholder="Value for every row" hx-post="{{ base }}/preview" hx-trigger="change" hx-include="closest form" hx-sync="closest form:replace"
+                         hx-target="#sec-output" hx-swap="outerHTML">
+                  {% endif %}
+                </div>
+              </td>
+              <td class="mono muted">{{ row.example }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="form-grid format-grid">
+        <label class="field">Separator
+          <select name="delimiter" hx-post="{{ base }}/preview" hx-trigger="change" hx-include="closest form" hx-sync="closest form:replace" hx-target="#sec-output" hx-swap="outerHTML">
+            {% for value, label in delimiters.items() %}<option value="{{ value }}" {% if o.delimiter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+        <label class="field">Dates look like
+          <select name="date_format" hx-post="{{ base }}/preview" hx-trigger="change" hx-include="closest form" hx-sync="closest form:replace" hx-target="#sec-output" hx-swap="outerHTML">
+            {% for value, label in date_formats.items() %}<option value="{{ value }}" {% if o.date_format == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+        <label class="field">Decimal places in prices
+          <select name="decimal_places" hx-post="{{ base }}/preview" hx-trigger="change" hx-include="closest form" hx-sync="closest form:replace" hx-target="#sec-output" hx-swap="outerHTML">
+            {% for n in range(0, 5) %}<option value="{{ n }}" {% if o.decimal_places == n %}selected{% endif %}>{{ n }}</option>{% endfor %}
+          </select>
+        </label>
+        <label class="field">Text encoding
+          <select name="encoding" hx-post="{{ base }}/preview" hx-trigger="change" hx-include="closest form" hx-sync="closest form:replace" hx-target="#sec-output" hx-swap="outerHTML">
+            {% for value, label in encodings.items() %}<option value="{{ value }}" {% if o.encoding == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="include_header" {% if o.include_header %}checked{% endif %}
+                 hx-post="{{ base }}/preview" hx-trigger="change" hx-include="closest form" hx-sync="closest form:replace" hx-target="#sec-output" hx-swap="outerHTML">
+          First row is column names
+        </label>
+      </div>
+
+      <div class="preview">
+        <div class="label-strong">Preview: a sample order in their format</div>
+        <pre class="code-preview">{{ o.preview }}</pre>
+        <p class="small muted">Made from this client's first customer and products. Real exports use approved orders only.</p>
+      </div>
+
+      <div class="section-actions">
+        <button class="btn btn-primary" type="submit">{% if o.is_pending %}Save output format{% else %}Save changes{% endif %}</button>
+      </div>
+    </form>
+  {% endif %}
+</section>

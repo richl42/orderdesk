@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "setup/macros.html" import locked %}
+{% block title %}{{ "Add a client" if not client else client.name ~ " · Settings" }} · Order Desk{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="breadcrumb"><a href="/">Clients</a> / {% if client %}{% if complete %}<a href="/clients/{{ client.id }}/orders">{{ client.name }}</a> / Settings{% else %}Add client{% endif %}{% else %}Add client{% endif %}</div>
+    <h1 style="margin-top: 6px">{% if client and complete %}{{ client.name }}: settings{% elif client %}Add a client: {{ client.name }}{% else %}Add a client{% endif %}</h1>
+    <p class="lede">Done once per wholesaler. Upload their three files, check the guesses, save. Every order after this uses these settings automatically.</p>
+  </div>
+  {% if client and complete %}
+  <nav class="tabs" aria-label="Client sections">
+    <a href="/clients/{{ client.id }}/orders">Orders</a>
+    <a href="/clients/{{ client.id }}/trial">Trial results</a>
+    <a href="/clients/{{ client.id }}/setup" aria-current="page">Settings</a>
+  </nav>
+  {% endif %}
+</div>
+
+{% include "setup/steps.html" %}
+
+{% if finish_error %}<p class="notice notice-problem" role="alert">{{ finish_error }}</p>{% endif %}
+
+{% include "setup/details.html" %}
+
+{% if client %}
+  {% with s = tables["catalogue"], meta = sections["catalogue"] %}{% include "setup/table.html" %}{% endwith %}
+  {% with s = tables["prices"], meta = sections["prices"] %}{% include "setup/table.html" %}{% endwith %}
+  {% with s = tables["customers"], meta = sections["customers"] %}{% include "setup/table.html" %}{% endwith %}
+  {% include "setup/output.html" %}
+  {% include "setup/rules.html" %}
+
+  <div class="bottom-actions">
+    <a class="btn btn-secondary" href="/clients/{{ client.id }}/orders?paste=1">Test with a past order</a>
+    <form method="post" action="/clients/{{ client.id }}/setup/finish"><button class="btn btn-primary" type="submit">Save client</button></form>
+  </div>
+{% else %}
+  {{ locked(2, "Product catalogue", "What every order line gets matched against. Excel or CSV.") }}
+  {{ locked(3, "Customer list", "Lets the system work out who each order is from, and where it is going.") }}
+  {{ locked(4, "Output format", "An example of what a finished order looks like in their system.") }}
+  {{ locked(5, "Rules", "When an order should be flagged instead of marked ready.") }}
+{% endif %}
+{% endblock %}

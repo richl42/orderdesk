@@ -1,0 +1,6 @@
+<nav id="setup-steps" class="step-strip" aria-label="Setup steps"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {% for st in steps %}
+  <a href="#{{ st.key }}" class="step {{ 'step-done' if st.done else ('step-now' if st.current else '') }}"
+     {% if st.current %}aria-current="step"{% endif %}>{{ st.number }} {{ st.label }}{% if st.done %} <span aria-hidden="true">✓</span><span class="visually-hidden"> done</span>{% endif %}</a>
+  {% endfor %}
+</nav>

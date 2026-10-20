@@ -55,14 +55,6 @@ def trials_index(request: Request, session: Session = Depends(get_session)):
     })
 
 
-@router.get("/clients/new")
-def add_client(request: Request):
-    return templates.TemplateResponse(request, "not_built.html", {
-        "nav": "add", "title": "Add a client",
-        "message": "The setup screen is the next part to be built. For now the demo client is set up by running make seed.",
-    })
-
-
 @router.get("/clients/{client_id}/trial")
 def client_trial(client_id: str, request: Request, session: Session = Depends(get_session)):
     client = get_client(session, client_id)

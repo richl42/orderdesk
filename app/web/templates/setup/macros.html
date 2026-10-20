@@ -1,0 +1,33 @@
+{% macro section_head(number, title, intro, done=False, optional=False) %}
+<div class="section-head">
+  {% if number %}<div class="num-badge {{ 'num-done' if done else '' }}" aria-hidden="true">{{ number }}</div>{% endif %}
+  <div>
+    <h2>{{ title }}{% if optional %} <span class="muted" style="font-weight: 400">(optional)</span>{% endif %}{% if done %}<span class="visually-hidden"> (done)</span>{% endif %}</h2>
+    <p class="section-intro">{{ intro }}</p>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro messages(error=None, notice=None) %}
+{% if error %}<p class="notice notice-problem" role="alert">{{ error }}</p>{% endif %}
+{% if notice %}<p class="notice notice-ready" role="status">{{ notice }}</p>{% endif %}
+{% endmacro %}
+
+{% macro file_icon() %}<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#45453F" stroke-width="1.6" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path></svg>{% endmacro %}
+
+{% macro upload_form(action, target, accept, label="Upload file", button="Upload") %}
+<form class="upload-form" method="post" action="{{ action }}" enctype="multipart/form-data"
+      hx-post="{{ action }}" hx-encoding="multipart/form-data" hx-target="{{ target }}" hx-swap="outerHTML">
+  <label class="field" style="flex: 1 1 260px">{{ label }}
+    <input type="file" name="file" accept="{{ accept }}" required>
+  </label>
+  <button class="btn btn-secondary" type="submit">{{ button }}</button>
+</form>
+{% endmacro %}
+
+{% macro locked(number, title, intro) %}
+<section class="card setup-section locked">
+  {{ section_head(number, title, intro) }}
+  <p class="muted">Save the client details first.</p>
+</section>
+{% endmacro %}

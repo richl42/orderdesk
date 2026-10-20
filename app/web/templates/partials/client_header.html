@@ -10,6 +10,6 @@
   <nav class="tabs" aria-label="Client sections">
     <a href="/clients/{{ client.id }}/orders" {% if tab == "orders" %}aria-current="page"{% endif %}>Orders</a>
     <a href="/clients/{{ client.id }}/trial" {% if tab == "trial" %}aria-current="page"{% endif %}>Trial results</a>
-    <a href="/clients/new?client={{ client.id }}" {% if tab == "settings" %}aria-current="page"{% endif %}>Settings</a>
+    <a href="/clients/{{ client.id }}/setup" {% if tab == "settings" %}aria-current="page"{% endif %}>Settings</a>
   </nav>
 </div>

@@ -1,0 +1,66 @@
+{% from "setup/macros.html" import section_head, messages %}
+{% if oob %}{% include "setup/steps.html" %}{% endif %}
+{% set r = rules %}
+<section id="sec-rules" class="card setup-section">
+  <a id="rules" class="anchor"></a>
+  {{ section_head(5, "Rules", "When an order should be flagged instead of marked ready.", done="rules" in client.setup_done, optional=True) }}
+  {{ messages(notice=r.notice) }}
+  {% if r.errors %}<p class="notice notice-problem" role="alert">Some values need fixing before the rules can be saved.</p>{% endif %}
+  <form method="post" action="/clients/{{ client.id }}/setup/rules"
+        hx-post="/clients/{{ client.id }}/setup/rules" hx-target="#sec-rules" hx-swap="outerHTML">
+    <div class="form-grid">
+      <label class="field">Order cutoff time
+        <input type="text" name="cutoff_time" value="{{ r.cutoff_time }}" placeholder="15:00" inputmode="numeric">
+        <span class="hint">Orders after this time asking for next working day delivery get flagged.</span>
+        {% if r.errors.cutoff_time %}<span class="field-error">{{ r.errors.cutoff_time }}</span>{% endif %}
+      </label>
+      <label class="field">Minimum order value (£)
+        <input type="text" name="min_order_value" value="{{ r.min_order_value }}" placeholder="Leave empty for no minimum" inputmode="decimal">
+        {% if r.errors.min_order_value %}<span class="field-error">{{ r.errors.min_order_value }}</span>{% endif %}
+      </label>
+      <label class="field">Look for duplicates over this many days
+        <input type="number" name="duplicate_window_days" min="1" max="90" value="{{ r.duplicate_window_days }}">
+        {% if r.errors.duplicate_window_days %}<span class="field-error">{{ r.errors.duplicate_window_days }}</span>{% endif %}
+      </label>
+      <label class="field">Minutes their staff spend per order
+        <input type="number" name="minutes_per_order" min="1" max="120" value="{{ r.minutes_per_order }}">
+        <span class="hint">Used for the "staff time it would save" figure.</span>
+        {% if r.errors.minutes_per_order %}<span class="field-error">{{ r.errors.minutes_per_order }}</span>{% endif %}
+      </label>
+    </div>
+
+    <div class="checks">
+      {% for key, label in rule_checkboxes %}
+      <label class="check-row"><input type="checkbox" name="{{ key }}" {% if r.checks.get(key) %}checked{% endif %}> {{ label }}</label>
+      {% endfor %}
+      <label class="check-row"><input type="checkbox" name="allow_ai_ready" {% if r.allow_ai_ready %}checked{% endif %}>
+        Let confident suggested matches be marked Ready</label>
+      <p class="hint" style="margin-left: 32px">Leave this off until the accuracy test shows no confidently wrong orders for this client. With it off, every suggested match is sent to you to check.</p>
+    </div>
+
+    <div class="label-strong">Unit words</div>
+    <p class="small muted">How customers write each unit. Separate words with commas. Inner units (bottle, roll) come from their catalogue.</p>
+    {% if r.errors.units %}<p class="field-error">{{ r.errors.units }}</p>{% endif %}
+    <div class="table-box">
+      <table class="map-table">
+        <thead><tr><th scope="col">Unit</th><th scope="col">Words customers use</th></tr></thead>
+        <tbody>
+        {% for unit, words in r.units %}
+          <tr>
+            <td><input type="text" name="unit_{{ loop.index0 }}" value="{{ unit }}" aria-label="Unit" class="mono unit-input"></td>
+            <td><input type="text" name="words_{{ loop.index0 }}" value="{{ words }}" aria-label="Words for {{ unit }}" class="wide-input"></td>
+          </tr>
+        {% endfor %}
+          <tr>
+            <td><input type="text" name="unit_{{ r.units | length }}" value="" aria-label="New unit" placeholder="Add a unit" class="mono unit-input"></td>
+            <td><input type="text" name="words_{{ r.units | length }}" value="" aria-label="Words for the new unit" class="wide-input"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-actions">
+      <button class="btn btn-primary" type="submit">Save rules</button>
+    </div>
+  </form>
+</section>

@@ -37,3 +37,19 @@ Assumptions made while building, one line each. Agreed with Rich on 19 Oct 2026 
 - Demo email addresses use the reserved .example domain so no real company or person can appear.
 - The demo catalogue has 81 products; band B prices are list price less 6%, for 20 products.
 - The wireframe canvas's five screens are kept in docs/wireframe/ as reference.
+
+## Milestone 2
+- The setup screen lives at /clients/<id>/setup; the Settings tab and "Continue setup" open it. A new client gets its id from the short name ("ABC Cleaning Supplies" -> abccleaningsupplies).
+- An uploaded setup file is kept as "waiting to be saved" (with a note on disk) until the operator checks the column guesses and saves, so half-finished setup survives a restart.
+- When a header says nothing useful, the column is guessed from its values (codes, emails, prices, barcodes, unit words). These guesses are marked "please check". Asking the AI about unclear headers waits until the AI connection is built in Milestone 3.
+- Each meaning can be chosen for one column only; a second column given the same meaning is treated as ignored.
+- Saving a file replaces that client's previous catalogue, customer list or band prices in full.
+- The band price list is its own optional section, "Prices by band", between the catalogue and the customer list.
+- The output example must be a CSV (exports are CSV files); an Excel example gets a plain message asking for a CSV.
+- Output columns can also be filled with a fixed value. Exports use Windows line endings (CRLF), which Sage and similar systems expect.
+- The output preview is a made-up order using the client's first customer and first two products, with that customer's band prices.
+- Trial start date and length are set in Client details.
+- Duplicate checking can be switched off; the "days to look back" is stored as duplicate_window_days, with 0 meaning off.
+- The minimum order rule is on whenever a minimum value is entered; leaving it empty means no minimum.
+- "Save client" checks details, catalogue, customer list and output format are done (rules are optional) and lists anything missing.
+- Old .xls files are refused with a message to save them as .xlsx or .csv; uploads over 25 MB are refused.

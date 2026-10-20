@@ -107,7 +107,7 @@ def summarise_client(session: Session, client: Client, now: datetime) -> ClientS
         names = {"details": "client details", "catalogue": "product catalogue",
                  "customers": "customer list", "output": "output format"}
         foot = f"Setup: {steps_done} of {len(SETUP_STEPS)} steps done ({', '.join(names[m] for m in missing)} missing)"
-        cta = ("Continue setup", f"/clients/new?client={cid}")
+        cta = ("Continue setup", f"/clients/{cid}/setup")
     elif client.mode == ClientMode.TRIAL and client.trial_start_date:
         day = trial_day(client.trial_start_date, client.trial_working_days, now.astimezone(LONDON).date())
         if day == 0:

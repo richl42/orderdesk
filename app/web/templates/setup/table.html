@@ -1,0 +1,87 @@
+{% from "setup/macros.html" import section_head, messages, file_icon, upload_form %}
+{% if oob %}{% include "setup/steps.html" %}{% endif %}
+{% set base = "/clients/%s/setup/files/%s" % (client.id, s.kind) %}
+{% set target = "#sec-" ~ s.kind %}
+<section id="sec-{{ s.kind }}" class="card setup-section">
+  <a id="{{ meta.anchor }}" class="anchor"></a>
+  {{ section_head(meta.number, meta.title, meta.intro, done=s.kind in client.setup_done) }}
+  {{ messages(s.error, s.notice) }}
+
+  {% if not s.has_file %}
+    {{ upload_form(base ~ "/upload", target, ".xlsx,.xlsm,.csv,.txt", "Upload their file (Excel or CSV)") }}
+  {% else %}
+    <div class="file-row">
+      <div class="file-name">
+        {{ file_icon() }}
+        <div>
+          <div class="mono">{{ s.filename }}</div>
+          <div class="small muted">
+            {% if s.is_pending %}{{ s.row_count }} rows found. Check the guesses below, then save.
+            {% else %}{{ s.saved_count }} {{ s.noun }} saved{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="file-actions">
+        {% if s.is_pending %}
+        <form method="post" action="{{ base }}/discard" hx-post="{{ base }}/discard" hx-target="{{ target }}" hx-swap="outerHTML">
+          <button class="btn btn-secondary" type="submit">Discard this file</button>
+        </form>
+        {% endif %}
+        <details class="replace">
+          <summary class="btn btn-secondary">Replace file</summary>
+          {{ upload_form(base ~ "/upload", target, ".xlsx,.xlsm,.csv,.txt", "New file") }}
+        </details>
+      </div>
+    </div>
+
+    {% if s.duplicates %}
+    <div class="notice notice-check">
+      <strong>{{ s.duplicates | length }} code{{ "s" if s.duplicates | length != 1 }} appear more than once:</strong>
+      <span class="mono">{{ s.duplicates[:20] | join(", ") }}{% if s.duplicates | length > 20 %} and {{ s.duplicates | length - 20 }} more{% endif %}</span>.
+      Only the first row of each will be kept. Ask the client which is right if it matters.
+    </div>
+    {% endif %}
+
+    <form method="post" action="{{ base }}/save" hx-post="{{ base }}/save" hx-target="{{ target }}" hx-swap="outerHTML">
+      <div class="label-strong">Check our column guesses</div>
+      <div class="table-box">
+        <table class="map-table">
+          <thead><tr><th scope="col">Column in their file</th><th scope="col">Example value</th><th scope="col">What it means</th></tr></thead>
+          <tbody>
+          {% for row in s.columns %}
+            <tr>
+              <td class="mono">{{ row.column }}</td>
+              <td class="muted">{{ row.example }}</td>
+              <td>
+                <select name="map_{{ row.index }}" aria-label="Meaning of {{ row.column }}"
+                        hx-post="{{ base }}/check" hx-trigger="change" hx-include="closest form" hx-sync="closest form:replace" hx-target="{{ target }}" hx-swap="outerHTML">
+                  {% for value, label in s.options.items() %}
+                  <option value="{{ value }}" {% if row.selected == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                  <option value="ignore" {% if row.selected == "ignore" %}selected{% endif %}>Ignore this column</option>
+                </select>
+                {% if row.unsure %}<div class="hint">{{ "Guessed from the values. Please check." if row.selected != "ignore" else "Not sure what this is. Choose, or leave it ignored." }}</div>{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if s.missing %}
+      <p class="notice notice-problem">Choose which column holds: {{ s.missing_labels | join(", ") }}. You can't save until {{ "it is" if s.missing | length == 1 else "they are" }} chosen.</p>
+      {% endif %}
+      {% for note in s.extra_notes %}<p class="small muted">{{ note }}</p>{% endfor %}
+      {% if s.warnings %}
+      <details class="small">
+        <summary>{{ s.warnings | length }} value{{ "s" if s.warnings | length != 1 }} could not be read</summary>
+        <ul>{% for w in s.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+      </details>
+      {% endif %}
+      <div class="section-actions">
+        <button class="btn btn-primary" type="submit" {% if s.missing %}disabled{% endif %}>
+          {% if s.is_pending %}Save {{ meta.title.split(" (")[0] | lower }}{% else %}Save changes{% endif %}
+        </button>
+      </div>
+    </form>
+  {% endif %}
+</section>

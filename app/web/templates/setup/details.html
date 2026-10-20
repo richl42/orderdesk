@@ -1,0 +1,52 @@
+{% from "setup/macros.html" import section_head, messages %}
+{% if oob %}{% include "setup/steps.html" %}{% endif %}
+<section id="sec-details" class="card setup-section">
+  <a id="details" class="anchor"></a>
+  {{ section_head(1, "Client details", "Who they are and which system their orders end up in.", done=client and "details" in client.setup_done) }}
+  {{ messages(notice=details_notice) }}
+  {% set f = details %}
+  <form method="post" action="{{ '/clients/%s/setup/details' % client.id if client else '/clients/new' }}"
+        {% if client %}hx-post="/clients/{{ client.id }}/setup/details" hx-target="#sec-details" hx-swap="outerHTML"{% endif %}>
+    <div class="form-grid">
+      <label class="field">Client name
+        <input type="text" name="name" value="{{ f.name }}" required {% if f.errors.name %}aria-invalid="true"{% endif %}>
+        {% if f.errors.name %}<span class="field-error">{{ f.errors.name }}</span>{% endif %}
+      </label>
+      <label class="field">Short name, used in file names
+        <input type="text" name="short_name" value="{{ f.short_name }}" placeholder="Made from the name if left empty" class="mono">
+      </label>
+      <label class="field">Their order system
+        <select name="erp_system">
+          {% for system in erp_systems %}<option {% if system == f.erp_system %}selected{% endif %}>{{ system }}</option>{% endfor %}
+        </select>
+        {% if f.errors.erp_system %}<span class="field-error">{{ f.errors.erp_system }}</span>{% endif %}
+      </label>
+      <label class="field">Mode
+        <select name="mode">
+          {% for value, label in modes %}<option value="{{ value }}" {% if value == f.mode %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field">Main contact
+        <input type="text" name="contact_name" value="{{ f.contact_name }}" placeholder="For example, operations manager">
+      </label>
+      <label class="field">Send problems to
+        <input type="email" name="contact_email" value="{{ f.contact_email }}" {% if f.errors.contact_email %}aria-invalid="true"{% endif %}>
+        {% if f.errors.contact_email %}<span class="field-error">{{ f.errors.contact_email }}</span>{% endif %}
+      </label>
+      <label class="field">Shadow trial starts on
+        <input type="date" name="trial_start_date" value="{{ f.trial_start_date }}">
+        {% if f.errors.trial_start_date %}<span class="field-error">{{ f.errors.trial_start_date }}</span>{% endif %}
+      </label>
+      <label class="field">Trial length in working days
+        <input type="number" name="trial_working_days" min="1" max="60" value="{{ f.trial_working_days }}">
+        {% if f.errors.trial_working_days %}<span class="field-error">{{ f.errors.trial_working_days }}</span>{% endif %}
+      </label>
+      <div class="field">Their orders arrive at
+        <div class="readonly">Not connected yet</div>
+      </div>
+    </div>
+    <div class="section-actions">
+      <button class="btn btn-primary" type="submit">{{ "Save details" if client else "Save and continue" }}</button>
+    </div>
+  </form>
+</section>
