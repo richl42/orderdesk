@@ -17,6 +17,14 @@ def london(moment: datetime | None, fmt: str = "%H:%M") -> str:
     return moment.astimezone(LONDON).strftime(fmt)
 
 
+def moment(value: datetime | None) -> str:
+    """'Mon 12 Oct 2026, 09:14' in London time."""
+    if value is None:
+        return ""
+    local = value.astimezone(LONDON)
+    return f"{local:%a} {local.day} {local:%b %Y}, {local:%H:%M}"
+
+
 def long_date(day: date | None) -> str:
     if day is None:
         return ""

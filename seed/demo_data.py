@@ -1,8 +1,9 @@
 """Build the fictional demo client, "Demo Cleaning Supplies".
 
 Writes the raw files a real client would send (product list, customer list,
-band B price list, an example import file) into seed/demo/, then sets the
-client up from those files through the same import code the setup screen uses.
+band B price list, an example import file) into seed/demo/, plus the 20 test
+orders and their answer keys (see seed/demo_orders.py), then sets the client up
+from those files through the same import code the setup screen uses.
 
 Everything here is invented. Email addresses use the reserved .example domain.
 
@@ -25,6 +26,7 @@ from app.models import Alias, Client, Customer
 from pipeline import normalise
 from pipeline.tables import guess_mapping, read_table
 from pipeline.vocab import DEFAULT_RULES, DEFAULT_UNIT_SYNONYMS, ClientMode, MappingKind
+from seed.demo_orders import write_demo_orders
 
 DEMO_ID = "demo"
 SEED_DIR = Path(__file__).resolve().parent / "demo"
@@ -33,6 +35,7 @@ PRODUCTS_FILE = "demo_products.xlsx"
 CUSTOMERS_FILE = "demo_customers.csv"
 PRICES_FILE = "demo_prices.csv"
 TEMPLATE_FILE = "SalesOrderImport_example.csv"
+DEMO_CONTACT_EMAIL = "operations@demo-cleaning.example"
 
 # (code, description, sell unit, pack size, inner unit, price, category, has barcode)
 PRODUCTS: list[tuple[str, str, str, int | None, str | None, str, str, bool]] = [
@@ -233,6 +236,14 @@ def write_demo_files(out_dir: Path = SEED_DIR) -> dict[str, Path]:
                          "DeliveryDate", "Notes"])
         writer.writerow(["SAMPLE01", "PO1234", "05/10/2026", "ABC-100", "2", "12.50", "07/10/2026", "Rear door"])
         writer.writerow(["SAMPLE01", "PO1234", "05/10/2026", "ABC-200", "1", "4.00", "07/10/2026", "Rear door"])
+
+    products = {code: (desc, unit, price) for code, desc, unit, _pack, _inner, price, _cat, _bc in PRODUCTS}
+    barcodes = {p[0]: ean13(i) for i, p in enumerate(PRODUCTS, start=1) if p[7]}
+    customers = {account: {"account_code": account, "name": name, "price_band": band}
+                 for account, name, _emails, _address, band in CUSTOMERS}
+    band_prices = {("B", code): band_b_price(code) for code in BAND_B_CODES}
+    paths["orders"], paths["answers"] = write_demo_orders(out_dir, products, customers, band_prices, barcodes,
+                                                          DEMO_CONTACT_EMAIL)
     return paths
 
 
@@ -258,7 +269,7 @@ def load_demo_client(session: Session, files: dict[str, Path]) -> Client:
         erp_system="Sage 50",
         mode=ClientMode.DEMO,
         contact_name="Operations manager",
-        contact_email="operations@demo-cleaning.example",
+        contact_email=DEMO_CONTACT_EMAIL,
         trial_start_date=TRIAL_START,
         trial_working_days=10,
         minutes_per_order=5,

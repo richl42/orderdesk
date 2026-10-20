@@ -13,6 +13,7 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.filters.update(
     london=fmt.london,
     long_date=fmt.long_date,
+    moment=fmt.moment,
     money=fmt.money,
     duration=fmt.duration,
     ago=fmt.ago,

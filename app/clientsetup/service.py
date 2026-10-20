@@ -9,10 +9,14 @@ from pathlib import Path
 
 from sqlmodel import Session, select
 
+from app.ai_client import get_ai
 from app.clientsetup import importers, pending
+from app.config import get_settings
 from app.db import client_files_dir, scoped
-from app.models import CatalogueItem, Client, ColumnMapping, Customer, OutputTemplate, PriceListEntry
+from app.models import CatalogueItem, Client, ColumnMapping, Customer, Event, OutputTemplate, PriceListEntry
 from pipeline import export
+from pipeline.ai import AIUnavailable, cost_gbp
+from pipeline.column_guess import suggest_columns
 from pipeline.tables import (
     FIELDS,
     IGNORE,
@@ -292,7 +296,43 @@ def current_columns(session: Session, client: Client, kind: str) -> list[str]:
     return []
 
 
-def receive_table_upload(client: Client, kind: str, filename: str, data: bytes) -> str | None:
+def guess_with_ai(session: Session | None, client: Client, kind: str, table) -> dict[str, str]:
+    """Guess each column from its header and values, then ask the AI about columns whose headers are unclear.
+
+    If the AI can't be reached, the guesses from headers and values stand.
+    """
+    guess = guess_mapping(table.columns, kind, table.rows)
+    mapping = dict(guess.mapping)
+    if not guess.unsure:
+        return mapping
+    taken = {fld for col, fld in mapping.items() if col not in guess.unsure and fld != IGNORE}
+    try:
+        suggestions, call = suggest_columns(get_ai(), kind, table, guess.unsure, taken)
+    except AIUnavailable:
+        return mapping
+    used = set(taken) | {fld for fld in suggestions.values() if fld != IGNORE}
+    for col in guess.unsure:
+        if col in suggestions:
+            mapping[col] = suggestions[col]
+        elif mapping[col] != IGNORE and mapping[col] in used:
+            mapping[col] = IGNORE  # the AI gave this meaning to another column
+        else:
+            used.add(mapping[col])
+    if session is not None:
+        settings = get_settings()
+        cost = cost_gbp(call, settings.ai_price_input_per_mtok, settings.ai_price_output_per_mtok)
+        session.add(Event(client_id=client.id, type="ai_call", details={
+            "purpose": "column_guess", "kind": kind, "model": call.model, "input_tokens": call.input_tokens,
+            "cache_write_tokens": call.cache_write_tokens, "cache_read_tokens": call.cache_read_tokens,
+            "output_tokens": call.output_tokens, "cost_gbp": str(cost) if cost is not None else None,
+            "cached": call.cached, "usable": call.input is not None, "columns": len(guess.unsure),
+        }))
+        session.commit()
+    return mapping
+
+
+def receive_table_upload(client: Client, kind: str, filename: str, data: bytes,
+                         session: Session | None = None) -> str | None:
     """Keep the upload as pending. Returns an error in plain words, or None."""
     try:
         pending.check_table_file(filename, data)
@@ -306,7 +346,7 @@ def receive_table_upload(client: Client, kind: str, filename: str, data: bytes) 
     if not table.columns or not table.rows:
         pending.clear(client.id, kind)
         return "No rows were found in that file. Check it is the right file and the first sheet has the list."
-    upload.mapping = guess_mapping(table.columns, kind, table.rows).mapping
+    upload.mapping = guess_with_ai(session, client, kind, table)
     pending.write(client.id, upload)
     return None
 

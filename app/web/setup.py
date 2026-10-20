@@ -143,7 +143,7 @@ async def upload_table(client_id: str, kind: str, request: Request, file: Upload
     client = get_client(session, client_id)
     kind = check_kind(kind)
     data = await file.read()
-    error = service.receive_table_upload(client, kind, file.filename or "upload", data)
+    error = service.receive_table_upload(client, kind, file.filename or "upload", data, session=session)
     return table_response(request, session, client, service.table_section(session, client, kind, error=error))
 
 

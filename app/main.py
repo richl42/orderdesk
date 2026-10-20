@@ -10,7 +10,8 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app import auth
 from app.db import get_engine
-from app.web import pages, setup
+from app.orders import service as orders_service
+from app.web import orders, pages, setup
 from app.web.templating import templates
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -18,6 +19,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 def create_app() -> FastAPI:
     get_engine()  # creates the database and tables on first run
+    orders_service.resume_unfinished()
 
     app = FastAPI(title="Order Desk", docs_url=None, redoc_url=None, openapi_url=None)
     # Middleware added last runs first: the session must be loaded before the login check.
@@ -34,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(pages.router)
     app.include_router(setup.router)
+    app.include_router(orders.router)
 
     @app.exception_handler(404)
     async def not_found(request: Request, exc):

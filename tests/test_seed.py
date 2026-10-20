@@ -66,3 +66,58 @@ def test_seeding_twice_replaces_the_demo_client(session, demo_files, demo_client
     assert count(session, CatalogueItem) == len(set(session.exec(select(CatalogueItem.product_code)).all()))
     assert session.exec(select(func.count()).select_from(Client)).one() == 1
     assert count(session, Alias) == 3
+
+
+def test_demo_orders_cover_every_type_and_hard_case(demo_files):
+    import json
+
+    from pipeline.ingest import ingest_file
+
+    orders = sorted(demo_files["orders"].iterdir())
+    assert len(orders) == 20
+    assert Counter(p.suffix for p in orders) == {".eml": 8, ".pdf": 5, ".xlsx": 4, ".csv": 3}
+
+    answers = [json.loads(p.read_text()) for p in sorted(demo_files["answers"].iterdir())]
+    assert [a["file"] for a in answers] == [p.name for p in orders]
+    cases = {c for a in answers for c in a["hard_cases"]}
+    for needed in ["Bottles that divide exactly into cases", "Bottles that do not divide into cases",
+                   "Misspelt product (\"disinfectent spary\")", "Customer uses their own product codes",
+                   "Manufacturer barcode instead of product code", "Product not in the catalogue",
+                   "Near twins (blue roll single vs pack) with no unit", "Price written differs from price band",
+                   "Same PO number sent twice", "No PO number", "\"Deliver Thursday\"",
+                   "Sent after the cutoff for next day delivery", "Order below minimum value",
+                   "Unknown sender, customer named in signature", "Completely unknown sender",
+                   "\"Can you add 2 boxes to yesterday's order\"", "\"Where is my delivery?\"",
+                   "A 40 line Excel order", "A simple, clean order", "A scanned PDF (image only)"]:
+        assert needed in cases, needed
+
+    statuses = Counter(a["expected_initial_status"] for a in answers)
+    assert statuses["pass_on"] == 2 and statuses["ready"] >= 5
+    assert any(len(a["lines"]) == 40 for a in answers)
+
+    for path, answer in zip(orders, answers):
+        text = ingest_file(path.name, path.read_bytes()).text
+        for line in answer["lines"]:
+            assert line["source_span"] in text, (path.name, line["source_span"])
+            if line["product_code"]:
+                assert line["unit_price"] is not None
+        if answer["expected_export_rows"]:
+            assert len(answer["expected_export_rows"]) == sum(1 for ln in answer["lines"] if ln["product_code"])
+            assert all(len(row) == 8 for row in answer["expected_export_rows"])
+
+
+def test_demo_order_answer_keys_use_real_customers_and_products(session, demo_client, demo_files):
+    import json
+
+    codes = set(session.exec(select(CatalogueItem.product_code)).all())
+    customers = {c.account_code: c for c in session.exec(select(Customer)).all()}
+    for path in demo_files["answers"].iterdir():
+        answer = json.loads(path.read_text())
+        if answer["customer"]:
+            customer = customers[answer["customer"]["account_code"]]
+            if answer["customer"]["match_method"] == "email":
+                assert answer["sender_email"] in customer.emails, path.name
+        else:
+            assert not any(answer["sender_email"] in c.emails for c in customers.values())
+        for line in answer["lines"]:
+            assert line["product_code"] is None or line["product_code"] in codes

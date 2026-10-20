@@ -169,12 +169,13 @@ class Order(SQLModel, table=True):
     raw_text: str = ""
     content_hash: Optional[str] = Field(default=None, index=True)
     received_at: datetime = utc_field(required=True)
-    processing_state: str = "reading"  # reading | done | failed
+    processing_state: str = "reading"  # reading | read (waiting for matching) | done | failed
 
     classification: Optional[str] = None  # Classification
     classification_reason: Optional[str] = None
     customer_id: Optional[int] = Field(default=None, foreign_key="customer.id", ondelete="SET NULL")
     customer_match_method: Optional[str] = None  # CustomerMatch
+    customer_name_raw: Optional[str] = None  # the customer's name as written in the order
     po_number: Optional[str] = None
     requested_delivery_date: Optional[date] = None
     requested_delivery_raw: Optional[str] = None

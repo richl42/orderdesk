@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.po_number or order.id }} · {{ client.name }} · Order Desk{% endblock %}
+{% block content %}
+{% set who = (customer.name if customer else None) or order.customer_name_raw or order.sender_email or "Unknown sender" %}
+<div class="page-head">
+  <div>
+    <div class="breadcrumb"><a href="/">Clients</a> / <a href="/clients/{{ client.id }}/orders">{{ client.name }}</a> / Order</div>
+    <div class="title-row" style="margin-top: 6px">
+      <h1>{% if order.po_number %}PO {{ order.po_number }} · {% endif %}{{ who }}</h1>
+      <span class="pill {{ pill.css }}">{{ pill.label }}</span>
+    </div>
+    <p class="lede">Arrived {{ order.received_at | moment }} · {{ came_as }}{% if order.processing_ms is not none %} · read in {{ (order.processing_ms / 1000) | round(1) }}s{% endif %}{% if order.ai_input_tokens %} · AI {{ order.ai_input_tokens + order.ai_output_tokens }} tokens{% if order.ai_cost_gbp is not none %}, {{ "£%.4f" | format(order.ai_cost_gbp) }}{% endif %}{% endif %}</p>
+  </div>
+  <a class="btn btn-secondary" href="/clients/{{ client.id }}/orders">Back to queue</a>
+</div>
+
+{% if reading %}
+<div class="notice notice-check" hx-get="/clients/{{ client.id }}/orders/{{ order.id }}" hx-trigger="every 2s" hx-select="main" hx-target="main" hx-swap="outerHTML">Still reading this order…</div>
+{% endif %}
+
+<p class="notice notice-check small">This page shows what was read from the order. Matching products and customers, and the full review screen, come in the next milestones.</p>
+
+{% if order.flags %}
+<section class="card" aria-labelledby="flags-title">
+  <div class="card-head"><h2 id="flags-title">Needs a look</h2></div>
+  <ul class="plain-list">
+    {% for f in order.flags %}
+    <li><span>{{ f.message }}</span>
+      <span class="pill {{ 'pill-problem' if f.severity == 'problem' else ('pill-check' if f.severity == 'check' else 'pill-pass-on') }}">{{ {"problem": "Problem", "check": "Check"}.get(f.severity, "Note") }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<div class="split">
+  <section class="card split-left" aria-labelledby="sent-title">
+    <div class="card-head">
+      <h2 id="sent-title">What they sent</h2>
+      {% if has_original %}<a class="btn btn-secondary" href="/clients/{{ client.id }}/orders/{{ order.id }}/original" target="_blank" rel="noopener">Open the original file</a>{% endif %}
+    </div>
+    <dl class="facts">
+      <div><dt>From</dt><dd>{{ order.sender_email or "Not known" }}</dd></div>
+      {% if order.subject %}<div><dt>Subject</dt><dd>{{ order.subject }}</dd></div>{% endif %}
+      <div><dt>Received</dt><dd>{{ order.received_at | moment }}</dd></div>
+      {% if order.original_filename %}<div><dt>File</dt><dd class="mono">{{ order.original_filename }}</dd></div>{% endif %}
+    </dl>
+    {% if order.raw_text %}
+    <pre class="order-text">{% for seg in segments %}{% if seg.line_no %}<mark class="{{ seg.css }}" title="Line {{ seg.line_no }}"><span class="visually-hidden">[line {{ seg.line_no }}] </span>{{ seg.text }}</mark>{% else %}{{ seg.text }}{% endif %}{% endfor %}</pre>
+    {% else %}
+    <p class="empty">{% if reading %}Reading…{% else %}No text could be read from this file.{% endif %}</p>
+    {% endif %}
+  </section>
+
+  <section class="card split-right" aria-labelledby="made-title">
+    <div class="card-head"><h2 id="made-title">What the system read</h2></div>
+    <dl class="facts">
+      <div><dt>Message type</dt><dd>{{ classification or "Not read yet" }}{% if order.classification_reason %}<div class="hint">{{ order.classification_reason }}</div>{% endif %}</dd></div>
+      <div><dt>Customer as written</dt><dd>{{ order.customer_name_raw or "Not written" }}</dd></div>
+      <div><dt>PO number</dt><dd class="mono">{{ order.po_number or "None" }}</dd></div>
+      <div><dt>Delivery date</dt><dd>{% if order.requested_delivery_date %}{{ order.requested_delivery_date | long_date }}{% else %}Not set{% endif %}{% if order.requested_delivery_raw %}<div class="hint">They wrote "{{ order.requested_delivery_raw }}"</div>{% endif %}</dd></div>
+      <div><dt>Delivery address</dt><dd>{{ order.delivery_address or "Not written" }}</dd></div>
+      <div><dt>Delivery notes</dt><dd>{{ order.delivery_notes or "None" }}</dd></div>
+    </dl>
+  </section>
+</div>
+
+<section class="card" aria-labelledby="lines-title">
+  <div class="card-head"><h2 id="lines-title">Lines read ({{ lines | length }})</h2></div>
+  {% if lines %}
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr><th scope="col">#</th><th scope="col">What they wrote</th><th scope="col">Code written</th><th scope="col">Product words</th><th scope="col">Quantity</th><th scope="col">Unit</th><th scope="col">Price written</th><th scope="col">Status</th></tr>
+      </thead>
+      <tbody>
+        {% for line in lines %}
+        <tr>
+          <td class="muted-cell"><span class="line-key {{ line_css(line) }}">{{ line.line_no }}</span></td>
+          <td>{{ line.source_span or line.raw_text }}</td>
+          <td class="mono">{{ line.requested_code or "" }}</td>
+          <td>{{ line.requested_description or "" }}</td>
+          <td class="mono">{{ line.requested_qty or "" }}</td>
+          <td>{{ line.requested_unit or "" }}</td>
+          <td class="mono">{{ line.requested_price | money if line.requested_price is not none else "" }}</td>
+          <td>
+            <div class="status-cell">
+              {% if line.status == "problem" %}<span class="pill pill-problem">Problem</span>{% else %}<span class="pill pill-reading">Read</span>{% endif %}
+              {% for f in line.flags %}<span class="status-note">{{ f.message }}</span>{% endfor %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">{% if order.status == "pass_on" %}Not a new order, so no lines were read.{% else %}No lines read.{% endif %}</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -30,7 +30,22 @@ def make_engine(db_path: Path) -> Engine:
         cursor.close()
 
     SQLModel.metadata.create_all(engine)
+    add_missing_columns(engine)
     return engine
+
+
+def add_missing_columns(engine: Engine) -> None:
+    """Add columns introduced after a database was created. New columns are always nullable."""
+    with engine.begin() as conn:
+        for table in SQLModel.metadata.sorted_tables:
+            existing = {row[1] for row in conn.exec_driver_sql(f'PRAGMA table_info("{table.name}")')}
+            for column in table.columns:
+                if column.name in existing:
+                    continue
+                if not column.nullable:
+                    raise RuntimeError(f"New column {table.name}.{column.name} must be nullable to add it")
+                kind = column.type.compile(dialect=engine.dialect)
+                conn.exec_driver_sql(f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" {kind}')
 
 
 def get_engine() -> Engine:

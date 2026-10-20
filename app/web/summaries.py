@@ -28,9 +28,12 @@ MODE_LABELS = {
 }
 
 
-def start_of_london_day(now: datetime) -> datetime:
-    local = now.astimezone(LONDON)
-    return local.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+def london_day_bounds(now: datetime) -> tuple[datetime, datetime]:
+    """(start, end) of today in London, in UTC. End matters: test orders can be dated later in the week."""
+    local = now.astimezone(LONDON).date()
+    start = datetime(local.year, local.month, local.day, tzinfo=LONDON)
+    end = datetime.combine(local + timedelta(days=1), datetime.min.time(), tzinfo=LONDON)
+    return start.astimezone(timezone.utc), end.astimezone(timezone.utc)
 
 
 def count(session: Session, statement) -> int:
@@ -85,9 +88,9 @@ def summarise_client(session: Session, client: Client, now: datetime) -> ClientS
     cid = client.id
     products = count(session, select(func.count()).select_from(CatalogueItem).where(CatalogueItem.client_id == cid))
     customers = count(session, select(func.count()).select_from(Customer).where(Customer.client_id == cid))
-    today_start = start_of_london_day(now)
+    today_start, today_end = london_day_bounds(now)
     orders_today = count(session, select(func.count()).select_from(Order).where(
-        Order.client_id == cid, Order.received_at >= today_start))
+        Order.client_id == cid, Order.received_at >= today_start, Order.received_at < today_end))
     to_review = count(session, select(func.count()).select_from(Order).where(
         Order.client_id == cid, Order.status.in_(WAITING)))
     right, compared = exactly_right_since(session, [cid], now - timedelta(days=7))
@@ -171,7 +174,7 @@ def order_issue(order: Order) -> str:
     if order.status == Status.PASS_ON:
         label = CLASSIFICATION_LABELS.get(Classification(order.classification), "Not an order") \
             if order.classification else "Not an order"
-        reason = f": {order.classification_reason}" if order.classification_reason else ""
+        reason = f": {order.classification_reason.rstrip('. ')}" if order.classification_reason else ""
         return f"{label}{reason}. Forward to the client contact"
     for severity in (Status.PROBLEM, Status.CHECK):
         for flag in order.flags or []:
@@ -190,9 +193,10 @@ def home_data(session: Session, now: datetime | None = None) -> HomeData:
     real_ids = [c.id for c in clients if c.mode != ClientMode.DEMO]
     active = [c for c in clients if c.mode != ClientMode.DEMO and setup_complete(c)]
 
-    today_start = start_of_london_day(now)
+    today_start, today_end = london_day_bounds(now)
     orders_today = count(session, select(func.count()).select_from(Order).where(
-        Order.client_id.in_(real_ids), Order.received_at >= today_start)) if real_ids else 0
+        Order.client_id.in_(real_ids), Order.received_at >= today_start, Order.received_at < today_end)) \
+        if real_ids else 0
 
     waiting_q = select(Order).where(Order.client_id.in_(real_ids), Order.status.in_(WAITING))
     waiting = session.exec(waiting_q.order_by(Order.received_at)).all() if real_ids else []

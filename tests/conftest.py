@@ -20,6 +20,10 @@ def isolated_settings(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("APP_PASSWORD", TEST_PASSWORD)
     monkeypatch.setenv("SECRET_KEY", "test-secret-key")
     monkeypatch.setenv("OPERATOR_NAME", "Rich")
+    # Tests never reach the real AI: with no key, the app falls back as it would offline.
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ORDERDESK_ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("AI_CACHE", raising=False)
     get_settings.cache_clear()
     db.reset_engine()
     yield
@@ -65,3 +69,16 @@ def logged_in(browser: TestClient) -> TestClient:
     response = browser.post("/login", data={"password": TEST_PASSWORD}, follow_redirects=False)
     assert response.status_code == 303
     return browser
+
+
+@pytest.fixture
+def fake_ai(monkeypatch):
+    """Orders are read straight away (not in a background thread) by a fake AI that the test can load with answers."""
+    from app import ai_client
+    from app.orders import service
+    from tests.helpers import FakeAI
+
+    ai = FakeAI()
+    monkeypatch.setattr(ai_client, "factory", lambda: ai)
+    monkeypatch.setattr(service, "run_later", lambda fn, *args: fn(*args))
+    return ai

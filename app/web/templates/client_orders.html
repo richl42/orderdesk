@@ -2,7 +2,87 @@
 {% block title %}{{ client.name }} · Orders · Order Desk{% endblock %}
 {% block content %}
 {% include "partials/client_header.html" %}
-<section class="card">
-  <p class="empty">Uploading and reviewing orders is not built yet. This is where the upload box, the order table and the export bar will go.</p>
+
+{% set short = client.short_name or client.name %}
+<div class="intake">
+  <section class="card dropzone" id="dropzone" aria-labelledby="upload-title">
+    <form id="upload-form" class="dropzone-form" method="post" action="/clients/{{ client.id }}/orders/upload"
+          enctype="multipart/form-data"
+          hx-post="/clients/{{ client.id }}/orders/upload" hx-encoding="multipart/form-data"
+          hx-target="#queue-live" hx-swap="outerHTML">
+      <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#45453F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M4 16v4h16v-4"></path></svg>
+      <div class="step-kicker">STEP 1</div>
+      <h2 id="upload-title">Upload customer orders</h2>
+      <p class="muted small">What {{ client.name }}'s customers sent you: emails (.eml), PDFs, Excel, CSV or text files. Drag files here, several at once is fine.</p>
+      <input class="visually-hidden" type="file" id="order-files" name="files" multiple
+             accept=".eml,.pdf,.xlsx,.xlsm,.csv,.txt">
+      <div class="dropzone-actions">
+        <label for="order-files" class="btn btn-primary" role="button" tabindex="0">Choose files</label>
+        <button type="button" class="btn btn-secondary" data-open="paste-box">Paste an email</button>
+        {% if client.mode == "demo" %}
+        <button type="submit" class="btn btn-secondary" form="demo-form">Load the 20 test orders</button>
+        {% endif %}
+      </div>
+      <details class="extra-fields">
+        <summary>Add the sender or arrival time (optional)</summary>
+        <div class="form-grid">
+          <label class="field">Sender email
+            <input type="email" name="sender_email" placeholder="orders@customer.co.uk" autocomplete="off">
+            <span class="hint">Used for PDFs and spreadsheets. Email files keep their own sender.</span>
+          </label>
+          <label class="field">Received (UK time)
+            <input type="datetime-local" name="received_at">
+            <span class="hint">Leave empty for now. Email files keep their own date.</span>
+          </label>
+        </div>
+      </details>
+      <noscript><button type="submit" class="btn btn-primary">Upload</button></noscript>
+    </form>
+    {% if client.mode == "demo" %}
+    <form id="demo-form" method="post" action="/clients/{{ client.id }}/orders/demo"
+          hx-post="/clients/{{ client.id }}/orders/demo" hx-target="#queue-live" hx-swap="outerHTML"></form>
+    {% endif %}
+  </section>
+
+  <aside class="card forwarding" aria-labelledby="forwarding-title">
+    <div class="forwarding-head">
+      <span class="dot dot-off" aria-hidden="true"></span>
+      <h2 id="forwarding-title" class="h-plain">Auto forwarding not connected yet</h2>
+    </div>
+    <p class="small muted">For now, save customer emails as files and upload them, or paste them in. Later, copies of their orders inbox will arrive here by themselves.</p>
+    <div class="mono address">{{ client.inbound_address or "No forwarding address yet" }}</div>
+    {% if client.mode in ("trial", "demo") %}
+    <div class="notice notice-check small">Trial mode: nothing here is entered into their system.</div>
+    {% endif %}
+  </aside>
+</div>
+
+<section class="card paste-box" id="paste-box" {% if not paste_open %}hidden{% endif %} aria-labelledby="paste-title">
+  <form method="post" action="/clients/{{ client.id }}/orders/paste"
+        hx-post="/clients/{{ client.id }}/orders/paste" hx-target="#queue-live" hx-swap="outerHTML"
+        hx-on::after-request="if (event.detail.successful) this.reset()">
+    <div class="card-head">
+      <h2 id="paste-title">Paste an email</h2>
+      <button type="button" class="btn btn-secondary" data-close="paste-box">Close</button>
+    </div>
+    <div class="card-body paste-body">
+      <label class="field">Email text
+        <textarea name="text" rows="10" required placeholder="Paste the whole email, including the signature"></textarea>
+      </label>
+      <div class="form-grid">
+        <label class="field">Sender email (optional)
+          <input type="email" name="sender_email" placeholder="orders@customer.co.uk" autocomplete="off">
+        </label>
+        <label class="field">Received (UK time, optional)
+          <input type="datetime-local" name="received_at">
+          <span class="hint">Leave empty for now.</span>
+        </label>
+      </div>
+      <div class="section-actions"><button type="submit" class="btn btn-primary">Add this order</button></div>
+    </div>
+  </form>
 </section>
+
+{% include "orders/live.html" %}
+<script src="/static/js/orders.js" defer></script>
 {% endblock %}

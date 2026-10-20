@@ -1,15 +1,13 @@
-"""Home screen, the client order queue header, and screens still to be built."""
+"""Home screen, the client pickers, and screens still to be built."""
 
 from __future__ import annotations
-
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
 
 from app.db import get_session
 from app.models import Client
-from app.web.summaries import home_data, summarise_client
+from app.web.summaries import home_data
 from app.web.templating import templates
 
 router = APIRouter()
@@ -26,15 +24,6 @@ def get_client(session: Session, client_id: str) -> Client:
 def home(request: Request, session: Session = Depends(get_session)):
     data = home_data(session)
     return templates.TemplateResponse(request, "home.html", {"data": data, "nav": "clients"})
-
-
-@router.get("/clients/{client_id}/orders")
-def client_orders(client_id: str, request: Request, session: Session = Depends(get_session)):
-    client = get_client(session, client_id)
-    summary = summarise_client(session, client, datetime.now(timezone.utc))
-    return templates.TemplateResponse(request, "client_orders.html", {
-        "summary": summary, "client": client, "nav": "orders", "tab": "orders",
-    })
 
 
 @router.get("/orders")

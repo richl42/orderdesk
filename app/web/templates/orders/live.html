@@ -1,0 +1,111 @@
+{# The part of the queue that updates by itself: step strip, notices, orders table and export bar. #}
+<div id="queue-live" class="queue-live"
+     {% if q.polling %}hx-get="/clients/{{ client.id }}/orders/live?status={{ q.current }}" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+
+  {% if notices %}
+  <div class="notices" role="status">
+    {% for kind, text in notices %}<div class="notice notice-{{ kind }}">{{ text }}</div>{% endfor %}
+  </div>
+  {% endif %}
+
+  <ol class="flow" aria-label="How an order moves through the desk">
+    <li class="flow-step">
+      <div class="flow-num" aria-hidden="true">1</div>
+      <div class="flow-text">
+        <div class="flow-title">Upload orders</div>
+        <div class="flow-main">{{ q.received_today }} received today</div>
+        <div class="flow-sub">{% if q.still_reading %}{{ q.still_reading }} still being read{% else %}Uploaded by you · forwarding not connected yet{% endif %}</div>
+      </div>
+    </li>
+    <li class="flow-step">
+      <div class="flow-num" aria-hidden="true">2</div>
+      <div class="flow-text">
+        <div class="flow-title">Review and approve</div>
+        <div class="flow-main">{{ q.waiting }} waiting for your approval</div>
+        <div class="flow-sub">{{ q.need_fix }} need a fix first</div>
+        {% if q.start_href %}<a class="flow-link" href="{{ q.start_href }}">Start reviewing</a>{% endif %}
+      </div>
+    </li>
+    <li class="flow-step">
+      <div class="flow-num" aria-hidden="true">3</div>
+      <div class="flow-text">
+        <div class="flow-title">Export in {{ client.name }}'s format</div>
+        <div class="flow-main">{{ q.approved }} approved order{{ "" if q.approved == 1 else "s" }} ready</div>
+        <div class="flow-sub">{% if q.output_file %}One file, like <span class="mono">{{ q.output_file }}</span>{% else %}Output format not set up yet{% endif %}</div>
+        <a class="flow-link" href="#export">Go to export</a>
+      </div>
+    </li>
+  </ol>
+
+  <section class="card" aria-labelledby="queue-title">
+    <div class="card-head">
+      <h2 id="queue-title"><span class="step-kicker inline">STEP 2</span>Review and approve orders</h2>
+      <div class="filters" role="group" aria-label="Filter by status">
+        {% for key, label in [("all", "All"), ("ready", "Ready"), ("check", "Check"), ("problem", "Problem"), ("pass_on", "Pass on"), ("approved", "Approved")] %}
+        <a class="filter{% if q.current == key %} filter-on{% endif %}" href="/clients/{{ client.id }}/orders?status={{ key }}"
+           hx-get="/clients/{{ client.id }}/orders/live?status={{ key }}" hx-target="#queue-live" hx-swap="outerHTML"
+           hx-push-url="/clients/{{ client.id }}/orders?status={{ key }}"
+           {% if q.current == key %}aria-current="true"{% endif %}>{{ label }} <span class="count">{{ q.counts[key] }}</span></a>
+        {% endfor %}
+      </div>
+    </div>
+    {% if q.rows %}
+    <div class="table-scroll">
+      <table class="data-table orders-table">
+        <thead>
+          <tr>
+            <th scope="col">Arrived</th>
+            <th scope="col">Customer</th>
+            <th scope="col" class="nowrap">PO number</th>
+            <th scope="col">Came as</th>
+            <th scope="col">Lines</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="visually-hidden">Action</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in q.rows %}
+          <tr id="order-{{ row.order.id }}">
+            <td class="mono muted-cell nowrap">{{ row.arrived }}</td>
+            <td class="strong-cell">{{ row.customer }}</td>
+            <td class="mono nowrap">{{ row.po }}</td>
+            <td class="muted-cell nowrap"{% if row.order.original_filename %} title="{{ row.order.original_filename }}"{% endif %}>{{ row.came_as }}</td>
+            <td class="muted-cell">{{ row.lines }}</td>
+            <td>
+              <div class="status-cell">
+                <span class="pill {{ row.pill.css }}">{{ row.pill.label }}</span>
+                <span class="status-note">{{ row.pill.note }}</span>
+              </div>
+            </td>
+            <td class="action-cell">
+              {% if row.retry %}
+              <form method="post" action="/clients/{{ client.id }}/orders/{{ row.order.id }}/retry"
+                    hx-post="/clients/{{ client.id }}/orders/{{ row.order.id }}/retry" hx-target="#queue-live" hx-swap="outerHTML">
+                <button type="submit" class="btn btn-secondary">Try again</button>
+              </form>
+              {% else %}
+              <a class="btn btn-secondary" href="{{ row.href }}">{{ row.action }}</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% elif q.counts["all"] %}
+    <p class="empty">No orders with this status.</p>
+    {% else %}
+    <p class="empty">No orders yet. Upload the files customers sent, or paste an email above.</p>
+    {% endif %}
+  </section>
+
+  <div id="export" class="export-bar">
+    <div>
+      <div class="step-kicker">STEP 3</div>
+      <div class="export-title">Export: {{ q.approved }} approved order{{ "" if q.approved == 1 else "s" }} ready</div>
+      <div class="small muted">One file in {{ client.name }}'s format, built from the template uploaded at setup. In the trial it gets compared with what their staff entered. Once live, it gets imported into their system.</div>
+    </div>
+    <button type="button" class="btn btn-primary" disabled aria-describedby="export-later">Download</button>
+    <span id="export-later" class="hint">Downloading comes in Milestone 6.</span>
+  </div>
+</div>

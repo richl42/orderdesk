@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
-from app.web.summaries import home_data
+from app.models import Client
+from app.web.summaries import home_data, summarise_client
 from tests.helpers import add_client, add_order
 
 
@@ -76,3 +77,13 @@ def test_unknown_client_is_not_found(logged_in):
 def test_nav_pages_load(logged_in, demo_client):
     for path in ("/orders", "/trials", "/clients/new", "/clients/demo/trial"):
         assert logged_in.get(path).status_code == 200, path
+
+
+def test_orders_dated_later_today_or_in_the_future_are_not_received_today(session, logged_in):
+    add_client(session, "abc", "ABC Cleaning Supplies")
+    now = datetime.now(timezone.utc)
+    add_order(session, "abc", "check", received_at=now)
+    add_order(session, "abc", "check", received_at=now + timedelta(days=2))
+    add_order(session, "abc", "check", received_at=now - timedelta(days=2))
+    assert summarise_client(session, session.get(Client, "abc"), now).orders_today == 1
+    assert "1 received today" in logged_in.get("/clients/abc/orders").text

@@ -54,6 +54,7 @@ class Settings:
     ai_price_input_per_mtok: Decimal | None
     ai_price_output_per_mtok: Decimal | None
     operator_name: str
+    ai_cache: bool = False  # keep AI answers by request hash (the accuracy test always does)
 
     @property
     def db_path(self) -> Path:
@@ -62,6 +63,10 @@ class Settings:
     @property
     def clients_dir(self) -> Path:
         return self.data_dir / "clients"
+
+    @property
+    def ai_cache_dir(self) -> Path:
+        return self.data_dir / "ai_cache"
 
 
 @lru_cache
@@ -84,4 +89,5 @@ def get_settings() -> Settings:
         ai_price_input_per_mtok=_decimal(values.get("AI_PRICE_INPUT_PER_MTOK")),
         ai_price_output_per_mtok=_decimal(values.get("AI_PRICE_OUTPUT_PER_MTOK")),
         operator_name=values.get("OPERATOR_NAME") or "Rich",
+        ai_cache=(values.get("AI_CACHE") or "").lower() in {"1", "on", "true", "yes"},
     )

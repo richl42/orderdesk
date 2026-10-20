@@ -136,17 +136,37 @@ def grid_to_table(grid: list[list[str]], **extra) -> Table:
     return Table(columns=columns, rows=rows, header_row=header_at, **extra)
 
 
-def read_csv_text(path: Path) -> tuple[str, str, str]:
-    data = path.read_bytes()
+def decode_csv(data: bytes) -> tuple[str, str, str]:
+    """(text, encoding, delimiter) for the bytes of a CSV file."""
     encoding = detect_encoding(data)
     text = data.decode(encoding, errors="replace")
     return text, encoding, detect_delimiter(text)
 
 
+def read_csv_text(path: Path) -> tuple[str, str, str]:
+    return decode_csv(path.read_bytes())
+
+
+EXCEL_SUFFIXES = {".xlsx", ".xlsm", ".xls"}
+
+
+def _frame_grid(frame: pd.DataFrame) -> list[list[str]]:
+    return [[_cell_text(c) for c in row] for row in frame.where(frame.notna(), None).values.tolist()]
+
+
+def read_sheets(data: bytes, filename: str) -> list[tuple[str, list[list[str]]]]:
+    """Every sheet of an Excel file (or the one 'sheet' of a CSV file) as (sheet name, grid of text cells)."""
+    if Path(filename).suffix.lower() in EXCEL_SUFFIXES:
+        frames = pd.read_excel(io.BytesIO(data), header=None, dtype=object, engine="openpyxl", sheet_name=None)
+        return [(name, _frame_grid(frame)) for name, frame in frames.items()]
+    text, _encoding, delimiter = decode_csv(data)
+    return [("", [[c.strip() for c in row] for row in csv.reader(io.StringIO(text), delimiter=delimiter)])]
+
+
 def read_table(path: Path) -> Table:
     """Read the first sheet of an Excel file, or a CSV file, into columns and rows of text."""
     suffix = path.suffix.lower()
-    if suffix in {".xlsx", ".xlsm", ".xls"}:
+    if suffix in EXCEL_SUFFIXES:
         frame = pd.read_excel(path, header=None, dtype=object, engine="openpyxl")
         grid = frame.where(frame.notna(), None).values.tolist()
         return grid_to_table(grid)
