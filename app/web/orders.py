@@ -14,17 +14,31 @@ from fastapi.responses import FileResponse, RedirectResponse
 from sqlmodel import Session, func, select
 
 from app.db import get_session
-from app.models import Client, Customer, Order, OrderLine, OutputTemplate
+from app.models import CatalogueItem, Client, Customer, Order, OrderLine, OutputTemplate
 from app.orders import service
 from app.web.format import london
 from app.web.pages import get_client
 from app.web.summaries import WAITING, london_day_bounds, order_issue, summarise_client
 from app.web.templating import templates
 from pipeline.normalise import split_emails
-from pipeline.vocab import CLASSIFICATION_LABELS, SOURCE_LABELS, STATUS_LABELS, Classification, Status
+from pipeline.vocab import (
+    CLASSIFICATION_LABELS,
+    MATCH_METHOD_LABELS,
+    SOURCE_LABELS,
+    STATUS_LABELS,
+    Classification,
+    Status,
+)
 from pipeline.workdays import LONDON
 
 router = APIRouter()
+
+CUSTOMER_HOW = {
+    "email": "Recognised by their email address",
+    "domain": "Recognised by their email domain",
+    "name": "Recognised by the name in the order only",
+    "operator": "Chosen by you",
+}
 
 FILTERS = [
     ("all", "All"),
@@ -61,10 +75,10 @@ def order_pill(order: Order) -> Pill:
     """The status pill and one-line reason for an order, including while it is still being read."""
     if order.processing_state == service.READING:
         return Pill("Reading", "pill-reading", "Reading the file…")
+    if order.processing_state == service.READ:
+        return Pill("Reading", "pill-reading", "Matching customer and products…")
     if order.processing_state == service.FAILED:
         return Pill("Problem", "pill-problem", order_issue(order) if order.flags else "Could not be read")
-    if order.status is None:
-        return Pill("Read", "pill-reading", "Lines read, matching comes next")
     label = STATUS_LABELS.get(Status(order.status), order.status)
     return Pill(label, f"pill-{order.status.replace('_', '-')}", order_issue(order))
 
@@ -135,7 +149,7 @@ def queue_data(session: Session, client: Client, current: str = "all", now: date
                                              and o.processing_state != service.FAILED]
     rows = []
     for order in shown:
-        reading = order.processing_state == service.READING
+        reading = order.processing_state in (service.READING, service.READ)
         rows.append(OrderRow(
             order=order,
             arrived=when(order.received_at, now),
@@ -160,7 +174,7 @@ def queue_data(session: Session, client: Client, current: str = "all", now: date
         received_today=sum(1 for o in orders if today_start <= o.received_at < today_end),
         waiting=len(waiting),
         need_fix=sum(1 for o in waiting if o.status == Status.PROBLEM),
-        still_reading=sum(1 for o in orders if o.processing_state == service.READING),
+        still_reading=sum(1 for o in orders if o.processing_state in (service.READING, service.READ)),
         approved=counts[Status.APPROVED],
         output_file=template.source_filename if template else "",
         start_href=f"/clients/{client.id}/orders/{waiting[0].id}" if waiting else None,
@@ -350,6 +364,9 @@ def order_page(client_id: str, order_id: int, request: Request, session: Session
     lines = session.exec(select(OrderLine).where(OrderLine.client_id == client.id, OrderLine.order_id == order.id)
                          .order_by(OrderLine.line_no)).all()
     customer = session.get(Customer, order.customer_id) if order.customer_id else None
+    codes = [ln.product_code for ln in lines if ln.product_code]
+    descriptions = dict(session.exec(select(CatalogueItem.product_code, CatalogueItem.description).where(
+        CatalogueItem.client_id == client.id, CatalogueItem.product_code.in_(codes))).all()) if codes else {}
     classification = CLASSIFICATION_LABELS.get(Classification(order.classification)) \
         if order.classification else None
     return templates.TemplateResponse(request, "orders/order.html", {
@@ -361,7 +378,10 @@ def order_page(client_id: str, order_id: int, request: Request, session: Session
         "came_as": SOURCE_LABELS.get(order.source_type, order.source_type),
         "has_original": bool(order.stored_path) and Path(order.stored_path).exists(),
         "line_css": line_css,
-        "reading": order.processing_state == service.READING,
+        "descriptions": descriptions,
+        "match_labels": MATCH_METHOD_LABELS,
+        "customer_how": CUSTOMER_HOW.get(order.customer_match_method or "", ""),
+        "reading": order.processing_state in (service.READING, service.READ),
     })
 
 

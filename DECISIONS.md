@@ -77,3 +77,28 @@ Assumptions made while building, one line each. Agreed with Rich on 19 Oct 2026 
 - Files that can't be orders (photos, Word, .xls) are refused at upload with the reason, and no order is made.
 - Until the review screen (Milestone 5), Review opens a read-only page: the original text with each line highlighted, what was read, and a link to the original file.
 - In the orders table, today's orders show "Today, 09:14"; older ones show the day and date.
+
+## Milestone 4
+- Matching works on each line as the customer wrote it, not on the AI's summary of it: saved phrases, exact names and candidates all use the line text, and for a spreadsheet row only the product cells (codes, descriptions), never quantity, unit, price, date, reference or note cells.
+- An exact name match compares with the catalogue description both with and without its pack wording (", case of 12", ", single roll"). Two products that share a name (blue roll pack and single) are never an exact match, so near twins can't be Ready.
+- Candidates are scored with rapidfuzz token_set_ratio against the catalogue names with the pack wording stripped (codes and barcodes left out, as exact codes are matched first). The top 10 scoring 40 or more go to the AI, and the top 5 are kept on the line.
+- A product code written on a line is checked against the words beside it: if they score under 50 against that product's name, the line is Check. Two of the client's codes on one line is not an exact match.
+- AI call 2: when more than one candidate fits, the AI picks the likeliest and marks it ambiguous. Ambiguous picks are always Check, even when allow_ai_ready is on. With no pick at all, the line is Problem ("Not found in the catalogue", or "Could be more than one product").
+- Product words the AI reads for a line must appear in that line, or they are dropped.
+- The quantity read for a line must sit where a quantity would: in a quantity column, or in free text next to a unit word, after "x", or at the start or end of the line. Otherwise the line is Check, so a number in a product name ("200 sheet") can't pass as the quantity.
+- Lines whose text could not be checked at reading stay Problem and are not matched.
+- Customer names are compared with token_set_ratio, so a short name that fits several customers ("Harbour Hotel") matches none of them. An order sent from one customer's email that names a different customer is Check.
+- Customer matching also runs on Pass on and unreadable orders, so the queue shows who sent them; it does not change their status.
+- A client's orders are matched one at a time in arrival order, and only once every earlier order has been read, so the duplicate check sees the orders that came before. It only looks back: an order uploaded later but dated earlier does not flag the one already matched.
+- The duplicate check looks at new orders that arrived in the days before (duplicate_window_days), by customer and PO number, or by identical text.
+- The cutoff check flags orders received after cutoff_time and wanted the same day or the next working day.
+- The minimum order check runs only once every line has a quantity and a price, so a line still being sorted out can't trigger it.
+- The quantity outlier check compares only with this customer's approved or exported orders.
+- Delivery wording that could not be turned into a date ("as normal") is a Check, not left silent.
+- A product with no band or catalogue price is Check. A price written per inner unit that matches the case price is not a price difference.
+- A quantity that is missing, written as a word, zero or not whole, and a unit that is another sell unit ("boxes" for something sold by the case), are Problem.
+- Each time a saved phrase matches, its times_used and last_used_at are updated.
+- make eval takes options through ARGS (make eval ARGS="--only 05"). AI answers are kept in data/ai_cache/ and results in data/eval/. --client says it needs staff entries, which arrive in Milestone 7.
+- The test suite replays the saved AI answers for the 20 demo orders (tests/fixtures/demo_ai_answers/, invented demo data only), so it checks every step after the AI without calling it. After any prompt change: make eval ARGS="--save-test-answers".
+- Answer key changes: order 04 now expects delivery wording "as normal" and its date_unclear flag; order 15's unknown product uses the flag code unknown_product.
+- A Ready order's reason line says "Everything matched and checked. Approve to add it to the export".

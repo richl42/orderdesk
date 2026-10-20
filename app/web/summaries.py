@@ -180,6 +180,8 @@ def order_issue(order: Order) -> str:
         for flag in order.flags or []:
             if flag.get("severity") == severity:
                 return flag.get("message", "")
+    if order.status == Status.READY:
+        return "Everything matched and checked. Approve to add it to the export"
     return "Needs a look"
 
 

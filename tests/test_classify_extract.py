@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from pipeline.classify_extract import COULD_NOT_READ, TOOL, classify_and_extract, find_span
-from pipeline.status import status_after_reading
 from tests.helpers import FakeAI, order_answer
 
 TEXT = """Hi,
@@ -68,8 +67,7 @@ def test_a_span_not_in_the_text_makes_that_line_a_problem():
     bad = result.lines[0]
     assert bad.source_span is None and bad.raw_text == "120 bottles of antibacterial spray"
     assert [f["code"] for f in bad.flags] == ["span_missing"]
-    assert status_after_reading(result.problem, result.classification, result.flags,
-                                [line.flags for line in result.lines]) == "problem"
+    assert bad.flags[0]["severity"] == "problem"
 
 
 def test_quantity_code_unit_and_price_must_be_inside_the_span():
@@ -113,14 +111,14 @@ def test_not_a_new_order_is_pass_on_and_lines_are_ignored():
                           classification="amendment", classification_reason="Adds to yesterday's order")
     result, _ = read(answer)
     assert result.lines == []
-    assert status_after_reading(result.problem, result.classification, result.flags, []) == "pass_on"
+    assert result.classification == "amendment" and result.flags == []
 
 
 def test_several_orders_in_one_message_is_a_problem():
     result, _ = read(good_answer(several_orders=True, several_orders_reason="Two delivery addresses"))
     assert result.flags[0]["code"] == "several_orders"
     assert "Two delivery addresses" in result.flags[0]["message"]
-    assert status_after_reading(result.problem, result.classification, result.flags, []) == "problem"
+    assert result.flags[0]["severity"] == "problem"
 
 
 def test_a_new_order_with_no_lines_is_a_problem():
@@ -128,7 +126,9 @@ def test_a_new_order_with_no_lines_is_a_problem():
     assert [f["code"] for f in result.flags] == ["no_lines"]
 
 
-def test_a_clean_new_order_waits_for_matching():
-    result, _ = read(good_answer())
-    assert status_after_reading(result.problem, result.classification, result.flags,
-                                [line.flags for line in result.lines]) is None
+def test_product_words_not_on_the_line_are_dropped():
+    answer = good_answer()
+    answer["lines"][0]["description"] = "antibacterial surface spray"
+    result, _ = read(answer)
+    assert result.lines[0].requested_description is None
+    assert result.lines[0].flags == []

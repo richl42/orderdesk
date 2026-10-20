@@ -21,7 +21,7 @@ You need Python 3.12 and `make`.
 | `make run` | Starts the app at http://127.0.0.1:8000 (your laptop only) |
 | `make test` | Runs the automated tests |
 | `make seed` | Rebuilds the demo client from its files |
-| `make eval` | Accuracy test (from Milestone 4) |
+| `make eval` | Accuracy test: runs the 20 demo orders and compares them with their answer keys. Options: `make eval ARGS="--only 05"`, `ARGS="--no-cache"` |
 | `make backup` | Zips the data folder into `backups/` |
 
 Client data lives in `data/` and is never committed to git.

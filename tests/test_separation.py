@@ -59,3 +59,37 @@ def test_delete_client_removes_only_that_clients_rows_and_files(session, demo_cl
     assert session.exec(scoped(Order, "demo")).first() is not None
     assert session.exec(scoped(CatalogueItem, "demo")).first() is not None
     assert demo_folder.exists()
+
+
+def test_matching_only_uses_the_orders_own_client(logged_in, session, demo_client, fake_ai):
+    """Another client's customers, products and saved phrases are never used to match an order."""
+    from email.message import EmailMessage
+
+    from app.models import Alias, Customer
+    from tests.helpers import order_answer
+
+    add_client(session, "abc", "ABC Cleaning Supplies")
+    other = Customer(client_id="abc", account_code="ABC-1", name="Riverside Hotel",
+                     emails=["buyer@abc-only.example"], email_domains=["abc-only.example"])
+    session.add(other)
+    session.add(CatalogueItem(client_id="abc", product_code="ABC-SPRAY", description="Magic spray"))
+    session.commit()
+    session.add(Alias(client_id="abc", customer_id=other.id, phrase="magic spray", product_code="ABC-SPRAY"))
+    session.commit()
+
+    msg = EmailMessage()
+    msg["From"] = "buyer@abc-only.example"
+    msg["Subject"] = "Order"
+    msg.set_content("2 cases of magic spray\nABC-SPRAY")
+    fake_ai.answers = [order_answer([("2 cases of magic spray", None, "magic spray", "2", "cases", None)]),
+                       {"lines": [{"line_no": 1, "product_code": None, "reason": "None fit", "ambiguous": False}]}]
+    logged_in.post("/clients/demo/orders/upload", files=[("files", ("o.eml", bytes(msg), "message/rfc822"))],
+                   headers={"HX-Request": "true"})
+
+    order = session.exec(select(Order).where(Order.client_id == "demo")).one()
+    assert order.customer_id is None  # the sender is only ABC's customer
+    from app.models import OrderLine
+    line = session.exec(select(OrderLine).where(OrderLine.order_id == order.id)).one()
+    assert line.product_code is None and line.match_method != "alias"
+    assert all(c["product_code"] != "ABC-SPRAY" for c in line.candidates)
+    assert order.status == "problem"

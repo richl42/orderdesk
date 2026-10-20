@@ -207,6 +207,8 @@ def _check_line(i: int, item: dict, text: str) -> LineResult:
         requested_unit=_clean(item.get("unit")),
     )
     price_text = _clean(item.get("price"))
+    if line.requested_description and span and basic(line.requested_description) not in basic(span):
+        line.requested_description = None  # only words really on the line are kept
     if span is None:
         line.flags.append(flag("span_missing", "This line could not be found in what the customer sent", "problem"))
         return line

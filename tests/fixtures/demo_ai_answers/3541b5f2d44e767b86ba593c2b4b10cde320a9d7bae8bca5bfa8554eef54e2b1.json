@@ -1,0 +1,1 @@
+{"input": {"lines": [{"line_no": 1, "product_code": "CLN-102", "reason": "Misspelled 'disinfectant spray' matches the 750ml disinfectant spray, sold per case.", "ambiguous": false}]}, "problem": null, "input_tokens": 342, "cache_write_tokens": 798, "cache_read_tokens": 0, "output_tokens": 118, "model": "claude-sonnet-5-5", "cached": false}

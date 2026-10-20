@@ -19,9 +19,10 @@ test:
 seed:
 	$(PY) -m seed.demo_data
 
-# Accuracy test (built in Milestone 4)
+# Accuracy test: run the 20 demo orders and compare with their answer keys.
+# Options go in ARGS, e.g. make eval ARGS="--only 05" or make eval ARGS="--no-cache"
 eval:
-	@echo "make eval is built in Milestone 4."
+	$(PY) -m eval.run $(ARGS)
 
 # Zip the data folder into backups/
 backup:

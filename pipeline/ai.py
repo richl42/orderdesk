@@ -73,6 +73,7 @@ class AnthropicAI:
         self.cache_dir = cache_dir
         self.effort = effort
         self.timeout = timeout
+        self.used_cache_files: list[Path] = []  # every cache file read or written, for saving test fixtures
         self._client = None
 
     def _sdk(self):
@@ -93,12 +94,14 @@ class AnthropicAI:
         path = self._cache_path(key)
         if path and path.exists():
             saved = json.loads(path.read_text(encoding="utf-8"))
+            self.used_cache_files.append(path)
             return ToolCall(**{**saved, "cached": True})
 
         call = self._call(system, user, tool, max_tokens)
         if path:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps({**asdict(call), "cached": False}, ensure_ascii=False), encoding="utf-8")
+            self.used_cache_files.append(path)
         return call
 
     def _call(self, system: str, user: str, tool: dict, max_tokens: int) -> ToolCall:

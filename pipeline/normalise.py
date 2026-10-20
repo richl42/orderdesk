@@ -121,3 +121,62 @@ def split_emails(cell: str | None) -> list[str]:
         if email not in found:
             found.append(email)
     return found
+
+
+# ---------------------------------------------------------------- order lines and catalogue names
+
+# Columns in a spreadsheet row that never describe the product: quantities, prices, dates, references, notes.
+_NOT_PRODUCT_LABELS = ("price", "total", "amount", "value", "vat", "date", "note", "ref", "po", "order", "qty",
+                       "quantity", "unit", "uom", "each", "deliver", "comment", "line", "customer", "account")
+ROW_CELL = re.compile(r"^\s*([^:|]{1,40}):\s*(.*?)\s*$")
+_PACK_PHRASE = re.compile(
+    r"^(?:(?:case|box|pack|bag|tub|sleeve|outer|tray|carton|pk|bundle)s?\s+of\s+\d+.*"
+    r"|single(?:\s+\w+)?|\d+\s*(?:pack|pk|per\s+case|per\s+pack)|(?:each|single roll))$",
+    flags=re.IGNORECASE,
+)
+
+
+def _label_is_product(label: str) -> bool:
+    key = re.sub(r"[^a-z]", "", label.lower())
+    if key in {"code", "stockcode", "productcode", "itemcode", "sku", "item", "product", "description",
+               "productdescription", "itemdescription", "name", "productname", "barcode", "ourcode", "theircode"}:
+        return True
+    return not any(word in key for word in _NOT_PRODUCT_LABELS)
+
+
+def is_table_row(text: str) -> bool:
+    """A line written from a spreadsheet or PDF table: 'Code: CLN-101 | Description: ... | Qty: 2'."""
+    cells = text.split(" | ")
+    return len(cells) >= 2 and all(ROW_CELL.match(c) for c in cells)
+
+
+def line_text(span: str, qty: str | None = None, unit: str | None = None, price: str | None = None) -> str:
+    """The words of an order line that describe the product.
+
+    Free text is used as written. For a table row the column labels are dropped, and so are cells
+    holding the quantity, unit, price, totals, dates, references or notes.
+    """
+    span = span or ""
+    if not is_table_row(span):
+        return span
+    skip = {basic(v) for v in (qty, unit, price) if v}
+    kept = []
+    for cell in span.split(" | "):
+        label, value = ROW_CELL.match(cell).groups()
+        if not value or basic(value) in skip or not _label_is_product(label):
+            continue
+        kept.append(value)
+    return " ".join(kept)
+
+
+def strip_pack(description: str) -> str:
+    """A catalogue description without its pack wording: 'Blue roll 2ply, pack of 6' -> 'Blue roll 2ply'."""
+    parts = [p.strip() for p in (description or "").split(",")]
+    while len(parts) > 1 and _PACK_PHRASE.match(parts[-1]):
+        parts.pop()
+    return ", ".join(parts)
+
+
+def name_keys(description: str) -> set[str]:
+    """Keys a customer's wording can equal for an exact-name match: with and without the pack wording."""
+    return {k for k in (description_key(description), description_key(strip_pack(description))) if k}

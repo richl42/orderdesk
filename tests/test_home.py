@@ -87,3 +87,10 @@ def test_orders_dated_later_today_or_in_the_future_are_not_received_today(sessio
     add_order(session, "abc", "check", received_at=now - timedelta(days=2))
     assert summarise_client(session, session.get(Client, "abc"), now).orders_today == 1
     assert "1 received today" in logged_in.get("/clients/abc/orders").text
+
+
+def test_ready_orders_say_they_only_need_approving(session):
+    from app.web.summaries import order_issue
+
+    add_client(session, "abc", "ABC Cleaning Supplies")
+    assert order_issue(add_order(session, "abc", "ready")).startswith("Everything matched and checked")

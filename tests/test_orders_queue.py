@@ -43,7 +43,8 @@ def test_upload_an_email_and_read_it(logged_in, session, demo_client, fake_ai):
     assert order.source_type == "eml" and order.original_filename == "order.eml"
     assert order.sender_email == "purchasing@riverside-hotel.example"
     assert order.received_at == datetime(2026, 10, 12, 8, 14, tzinfo=timezone.utc)  # the email's own date
-    assert order.processing_state == "read" and order.status is None and order.initial_status is None
+    assert order.processing_state == "done" and order.status == "ready" and order.initial_status == "ready"
+    assert order.customer_match_method == "email"
     assert order.po_number == "2291" and order.customer_name_raw == "Riverside Hotel"
     assert str(order.requested_delivery_date) == "2026-10-15"
     assert order.content_hash and order.raw_text.startswith("Please send")
@@ -53,13 +54,16 @@ def test_upload_an_email_and_read_it(logged_in, session, demo_client, fake_ai):
     lines = session.exec(select(OrderLine).where(OrderLine.order_id == order.id)).all()
     assert [(ln.source_span, ln.requested_qty, ln.requested_unit) for ln in lines] == \
         [("120 bottles of the antibac spray", "120", "bottles")]
-    assert lines[0].client_id == "demo"
+    line = lines[0]
+    assert line.client_id == "demo"
+    assert (line.product_code, line.match_method, line.qty, line.unit) == ("CLN-101", "alias", 10, "CASE")
+    assert line.conversion_note == "120 bottles / 12 = 10 cases" and line.status == "ready"
 
     events = [e.type for e in session.exec(select(Event).where(Event.order_id == order.id)).all()]
-    assert events == ["upload", "ai_call", "order_read"]
+    assert events == ["upload", "ai_call", "order_read", "order_processed"]  # no AI call 2: a saved phrase matched
 
     page = logged_in.get("/clients/demo/orders")
-    assert "Riverside Hotel" in page.text and "Lines read, matching comes next" in page.text
+    assert "Riverside Hotel" in page.text and 'class="pill pill-ready">Ready<' in page.text
     assert "2291" in page.text
 
 
@@ -109,7 +113,7 @@ def test_paste_an_email(logged_in, session, demo_client, fake_ai):
     }, headers={"HX-Request": "true"})
     assert "Pasted email added" in response.text
     order = session.exec(select(Order)).one()
-    assert order.source_type == "paste" and order.processing_state == "read"
+    assert order.source_type == "paste" and order.processing_state == "done" and order.status == "ready"
     assert order.received_at == datetime(2026, 10, 12, 8, 14, tzinfo=timezone.utc)
     assert "Pasted email" in logged_in.get("/clients/demo/orders").text
 
@@ -131,7 +135,7 @@ def test_rows_show_reading_then_poll_until_done(logged_in, session, demo_client,
     for fn, args in queued:
         fn(*args)
     live = logged_in.get("/clients/demo/orders/live")
-    assert "Lines read, matching comes next" in live.text
+    assert 'class="pill pill-ready">Ready<' in live.text
     assert 'hx-trigger="every 2s"' not in live.text
 
 
@@ -188,7 +192,8 @@ def test_ai_not_reachable_can_be_tried_again(logged_in, session, demo_client, fa
     fake_ai.answers = [ANSWER]
     logged_in.post(f"/clients/demo/orders/{order.id}/retry", headers={"HX-Request": "true"})
     session.refresh(order)
-    assert order.processing_state == "read" and order.flags == []
+    assert order.processing_state == "done" and order.status == "ready"
+    assert not any(f["code"] == "ai_unavailable" for f in order.flags)
 
 
 def test_unfinished_orders_are_picked_up_after_a_restart(session, demo_client, fake_ai):
@@ -201,7 +206,7 @@ def test_unfinished_orders_are_picked_up_after_a_restart(session, demo_client, f
     fake_ai.answers = [ANSWER]
     service.resume_unfinished()
     session.refresh(order)
-    assert order.processing_state == "read"
+    assert order.processing_state == "done"
 
 
 def test_filters_and_counts(logged_in, session, demo_client, fake_ai):
@@ -222,7 +227,7 @@ def test_order_page_highlights_each_line_where_it_came_from(logged_in, session, 
     order = session.exec(select(Order)).one()
     page = logged_in.get(f"/clients/demo/orders/{order.id}")
     assert page.status_code == 200
-    assert '<mark class="hl-read" title="Line 1"><span class="visually-hidden">[line 1] </span>' \
+    assert '<mark class="hl-ready" title="Line 1"><span class="visually-hidden">[line 1] </span>' \
            '120 bottles of the antibac spray</mark>' in page.text
     assert "They wrote &#34;Thursday&#34;" in page.text or 'They wrote "Thursday"' in page.text
 

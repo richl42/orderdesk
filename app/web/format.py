@@ -37,6 +37,13 @@ def money(value: Decimal | None) -> str:
     return f"£{value:,.2f}"
 
 
+def qty(value: Decimal | None) -> str:
+    """10 -> '10', 2.50 -> '2.5'."""
+    if value is None:
+        return ""
+    return format(value.normalize(), "f") if value != value.to_integral_value() else str(int(value))
+
+
 def duration(seconds: float | int | None) -> str:
     """41 -> '41s', 125 -> '2m 05s', 7300 -> '2h 01m'."""
     if seconds is None:

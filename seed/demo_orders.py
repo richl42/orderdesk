@@ -137,7 +137,8 @@ Dave
         sender_email="jo.patel.home@mailbox.example", sender_name="Jo Patel", subject="Order from Larkspur",
         account="LARKSP01", match_method="name", classification="new_order", status="check",
         hard_cases=["Misspelt product (\"disinfectent spary\")", "Unknown sender, customer named in signature"],
-        po_number="LCH-2207", flags=["customer_by_name"],
+        po_number="LCH-2207", flags=["customer_by_name", "date_unclear"],
+        delivery_raw="as normal",
         body="""Hello,
 
 I'm covering for our housekeeping manager this week, so I'm sending this from my own email. Please could we have:
@@ -309,7 +310,7 @@ Mill Lane Café
         key="15_pulse_not_in_catalogue", ext="xlsx", received="2026-10-21 09:20",
         sender_email="orders@pulse-studio.example", account="PULSE001", match_method="email",
         classification="new_order", status="problem", hard_cases=["Product not in the catalogue"],
-        po_number="PFS-0331", flags=["line_unmatched"],
+        po_number="PFS-0331", flags=["unknown_product"],
         note="Yoga mat cleaner is not in the catalogue; it is left off the export and the client is asked.",
         lines=[
             Line("Antibacterial surface spray 750ml", "CLN-101", "2", "CASE", "exact_name", "ready"),

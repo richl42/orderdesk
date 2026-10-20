@@ -15,6 +15,7 @@ templates.env.filters.update(
     long_date=fmt.long_date,
     moment=fmt.moment,
     money=fmt.money,
+    qty=fmt.qty,
     duration=fmt.duration,
     ago=fmt.ago,
 )
