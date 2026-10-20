@@ -489,3 +489,6 @@ p { margin: 0; }
 .review-bar .why { flex-basis: 100%; text-align: right; }
 .timer { color: var(--text-3); font-size: 14px; }
 @media (max-width: 640px) { .review-bar { position: static; } .review-bar .why { text-align: left; } }
+.export-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.export-actions form { margin: 0; }
+.export-made { display: flex; flex-direction: column; gap: 10px; border-color: var(--ready-fg); }

@@ -15,7 +15,7 @@ from rapidfuzz import fuzz
 from sqlmodel import Session
 
 from app.db import get_session, scoped
-from app.models import CatalogueItem, Client, Customer, Order, OrderLine
+from app.models import CatalogueItem, Client, Customer, ExportBatch, Order, OrderLine
 from app.orders import review
 from app.orders.standard import output_template, standard_order
 from app.web.orders import get_order, is_htmx, order_pill
@@ -274,6 +274,7 @@ def context(session: Session, client: Client, order: Order, **kwargs) -> dict:
         "line_css": line_css, "classification": classification,
         "came_as": SOURCE_LABELS.get(order.source_type, order.source_type),
         "reading": order.processing_state in ("reading", "read"),
+        "batch": session.get(ExportBatch, order.export_batch_id) if order.export_batch_id else None,
     }
 
 

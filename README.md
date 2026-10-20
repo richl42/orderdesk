@@ -22,6 +22,7 @@ You need Python 3.12 and `make`.
 | `make test` | Runs the automated tests |
 | `make seed` | Rebuilds the demo client from its files |
 | `make eval` | Accuracy test: runs the 20 demo orders and compares them with their answer keys. Options: `make eval ARGS="--only 05"`, `ARGS="--no-cache"` |
+| `make check-export FILE=...` | Checks a downloaded demo export file against the demo answer keys |
 | `make backup` | Zips the data folder into `backups/` |
 
 Client data lives in `data/` and is never committed to git.

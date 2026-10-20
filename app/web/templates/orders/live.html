@@ -105,7 +105,11 @@
       <div class="export-title">Export: {{ q.approved }} approved order{{ "" if q.approved == 1 else "s" }} ready</div>
       <div class="small muted">One file in {{ client.name }}'s format, built from the template uploaded at setup. In the trial it gets compared with what their staff entered. Once live, it gets imported into their system.</div>
     </div>
-    <button type="button" class="btn btn-primary" disabled aria-describedby="export-later">Download</button>
-    <span id="export-later" class="hint">Downloading comes in Milestone 6.</span>
+    <div class="export-actions">
+      <form method="post" action="/clients/{{ client.id }}/exports">
+        <button type="submit" class="btn btn-primary" {% if not q.approved %}disabled{% endif %}>Download</button>
+      </form>
+      <a class="btn btn-secondary" href="/clients/{{ client.id }}/exports">Past exports</a>
+    </div>
   </div>
 </div>

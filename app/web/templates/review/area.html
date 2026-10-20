@@ -26,7 +26,7 @@
   {% if v.error %}<div class="notice notice-problem">{{ v.error }}</div>{% endif %}
   {% if reading %}<div class="notice notice-check">Still reading this order…</div>{% endif %}
   {% if order.status == "approved" %}<div class="notice notice-ready">Approved{% if order.approved_at %} {{ order.approved_at | moment }}{% endif %}. It goes in the next export.</div>{% endif %}
-  {% if order.status == "exported" %}<div class="notice notice-ready">Exported. It can no longer be changed.</div>{% endif %}
+  {% if order.status == "exported" %}<div class="notice notice-ready">Exported{% if order.exported_at %} {{ order.exported_at | moment }}{% endif %}{% if batch %} in <a href="/clients/{{ client.id }}/exports/{{ batch.id }}/download" class="mono">{{ batch.file_name }}</a>{% endif %}. It can no longer be changed.</div>{% endif %}
   {% if order.status == "pass_on" %}<div class="notice notice-check">Not a new order{% if classification and order.classification != "new_order" %} ({{ classification | lower }}){% endif %}{% if order.classification_reason %}: {{ order.classification_reason }}{% endif %}. Pass it to the client contact.</div>{% endif %}
 </div>
 
@@ -239,7 +239,15 @@ Subject: {{ v.question.subject }}
     </form>
     {% endif %}
     <button type="button" class="btn btn-secondary" id="ask-client" data-mailto="mailto:{{ v.question.to }}?subject={{ v.question.subject | urlencode }}&body={{ v.question.body | urlencode }}">Ask client contact</button>
-    <button type="button" class="btn btn-secondary" disabled title="Downloading comes in Milestone 6">Download this order</button>
+    {% if order.status == "approved" %}
+    <form method="post" action="{{ base }}/download">
+      <button type="submit" class="btn btn-secondary" title="Counts as exported: it won't be in a later batch">Download this order</button>
+    </form>
+    {% elif order.status == "exported" and batch %}
+    <a class="btn btn-secondary" href="/clients/{{ client.id }}/exports/{{ batch.id }}/download">Download {{ batch.file_name }}</a>
+    {% else %}
+    <button type="button" class="btn btn-secondary" disabled title="Approve the order first">Download this order</button>
+    {% endif %}
     {% if order.status == "approved" %}
     <form hx-post="{{ base }}/undo-approval" hx-target="#review-area" hx-swap="outerHTML" method="post" action="{{ base }}/undo-approval">
       <button type="submit" class="btn btn-secondary">Undo approval</button>

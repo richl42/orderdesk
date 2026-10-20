@@ -163,7 +163,7 @@ Larkspur Care Home
         classification="new_order", status="problem",
         hard_cases=["Bottles that do not divide into cases", "Letter-style PDF"],
         po_number="HV-3390", delivery_raw="Friday 16 October", delivery_date="2026-10-16",
-        delivery_notes="goods entrance at the rear of the hotel", flags=["conversion"],
+        delivery_notes="Please deliver to the goods entrance at the rear of the hotel.", flags=["conversion"],
         note="30 bottles is not a whole number of cases of 12. The customer confirmed 3 cases by phone.",
         lines=[
             Line("30 bottles of glass and mirror cleaner", "CLN-103", "3", "CASE", "exact_name", "problem",
@@ -261,8 +261,14 @@ Mill Lane Café
         key="10_cedars_scanned", ext="pdf", received="2026-10-16 09:30",
         sender_email="office@cedarsnursery.example", account="CEDARS01", match_method="email",
         classification="new_order", status="problem", hard_cases=["A scanned PDF (image only)"],
-        flags=["scanned_pdf"], exportable=False,
-        note="An image of a handwritten order form with no text layer.",
+        flags=["scanned_pdf"],
+        note="An image of a handwritten order form with no text layer. The operator types its lines in from the "
+             "scan, so nothing can be right first time.",
+        lines=[
+            Line("Toilet roll 2ply", "TOW-301", "2", "CASE", None, "problem", note="typed in from the scan"),
+            Line("Blue roll", "TOW-310", "3", "PACK", None, "problem", note="typed in from the scan"),
+            Line("Antibac spray", "CLN-101", "1", "CASE", None, "problem", note="typed in from the scan"),
+        ],
     ),
     Spec(
         key="11_towerhouse_po_table", ext="pdf", received="2026-10-19 09:05",

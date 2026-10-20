@@ -121,3 +121,14 @@ Assumptions made while building, one line each. Agreed with Rich on 19 Oct 2026 
 - Download this order is shown but waits for Milestone 6.
 - Catalogue search on the review screen lists products whose description contains every word typed, or whose words are close spellings of the words typed, and codes or barcodes starting with what was typed. Only this client's products.
 - Keyboard: A approves, N opens the next order, 1 to 5 picks a product on the open line and saves it, Escape closes the open line. Letters and numbers do nothing while typing in a box.
+
+## Milestone 6
+- Export files are made only from the standard order and the client's output template, by the same code as the review screen's export preview. Rows go oldest order first, one per line.
+- A batch holds every Approved order not yet exported. Making it marks those orders Exported, records an ExportBatch, and keeps the file in data/clients/<id>/exports/. If anything fails, nothing is marked exported and the file is removed. A lock stops two clicks putting the same orders in two files.
+- "Download this order" counts as exporting it (agreed with Rich): it becomes a one-order ExportBatch, so the order can never be in a later batch as well. It is only offered once the order is approved; an exported order links to the file it went in.
+- Past exports are downloaded again from the stored file, byte for byte, never rebuilt from today's data.
+- File names use London time. A second batch in the same minute gets _2. A PO number already starting with "PO" is not given a second one (PO2291, not POPO2291), and an order with no PO number is named <ShortName>_order<id>.csv.
+- After a batch is made, the history page opens and starts the download by itself, so the queue's counts are up to date afterwards.
+- No output format set up means no file, with a plain message pointing at Settings.
+- Answer key changes: order 10 (the scanned PDF) now holds the three lines typed in from the scan, with their export rows, so first pass exact on the demo reads 90% (nothing can read a scan first time). Order 05's delivery note is the customer's whole sentence, which is what is written and what gets exported.
+- make check-export FILE=<file> compares a downloaded demo export with the answer keys' expected rows (79 rows for the 17 approved orders).

@@ -11,7 +11,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app import auth
 from app.db import get_engine
 from app.orders import service as orders_service
-from app.web import orders, pages, review, setup
+from app.web import exports, orders, pages, review, setup
 from app.web.templating import templates
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -38,6 +38,7 @@ def create_app() -> FastAPI:
     app.include_router(setup.router)
     app.include_router(orders.router)  # before review: /orders/live must win over /orders/{order_id}
     app.include_router(review.router)
+    app.include_router(exports.router)
 
     @app.exception_handler(404)
     async def not_found(request: Request, exc):

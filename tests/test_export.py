@@ -68,3 +68,10 @@ def test_values_with_commas_are_quoted():
 def test_encoding_with_bom():
     assert export.to_bytes("Café", {"encoding": "utf-8-sig"}).startswith(b"\xef\xbb\xbf")
     assert export.to_bytes("Café", {"encoding": "cp1252"}) == b"Caf\xe9"
+
+
+def test_windows_encoding_keeps_accents_as_excel_on_a_uk_pc_expects():
+    template = dict(TEMPLATE, encoding="cp1252")
+    order = dict(ORDER, delivery_notes="Café entrance")
+    data = export.to_bytes(export.render_orders_text([order], template), template)
+    assert "Café entrance".encode("cp1252") in data

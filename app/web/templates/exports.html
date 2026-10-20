@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ client.name }} · Exports · Order Desk{% endblock %}
+{% block head %}{% if new %}<meta http-equiv="refresh" content="0;url=/clients/{{ client.id }}/exports/{{ new.id }}/download">{% endif %}{% endblock %}
+{% block content %}
+{% include "partials/client_header.html" %}
+
+{% if error %}<div class="notice notice-problem" role="alert">{{ error }}</div>{% endif %}
+{% if new %}
+<section class="card card-body export-made" role="status">
+  <h2>Export made: <span class="mono">{{ new.file_name }}</span></h2>
+  <p class="muted">{{ new.order_ids | length }} order{{ "" if new.order_ids | length == 1 else "s" }}, {{ new.row_count }} row{{ "" if new.row_count == 1 else "s" }}. The download should start by itself. Those orders are now marked Exported.</p>
+  <div><a class="btn btn-primary" href="/clients/{{ client.id }}/exports/{{ new.id }}/download">Download {{ new.file_name }}</a></div>
+</section>
+{% endif %}
+
+<div class="export-bar">
+  <div>
+    <div class="export-title">{{ waiting }} approved order{{ "" if waiting == 1 else "s" }} waiting to be exported</div>
+    <div class="small muted">A new file holds every approved order that is not in a file yet.</div>
+  </div>
+  <form method="post" action="/clients/{{ client.id }}/exports">
+    <button type="submit" class="btn btn-primary" {% if not waiting %}disabled{% endif %}>Download a new file</button>
+  </form>
+</div>
+
+<section class="card" aria-labelledby="past-title">
+  <div class="card-head">
+    <h2 id="past-title">Past exports</h2>
+    <a class="btn btn-secondary" href="/clients/{{ client.id }}/orders">Back to orders</a>
+  </div>
+  {% if batches %}
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th scope="col">Made</th><th scope="col">File</th><th scope="col">Orders</th><th scope="col">Rows</th><th scope="col"><span class="visually-hidden">Download</span></th></tr></thead>
+      <tbody>
+        {% for b in batches %}
+        <tr>
+          <td class="nowrap">{{ b.created_at | moment }}</td>
+          <td class="mono">{{ b.file_name }}</td>
+          <td>{{ b.order_ids | length }}</td>
+          <td>{{ b.row_count }}</td>
+          <td class="action-cell"><a class="btn btn-secondary" href="/clients/{{ client.id }}/exports/{{ b.id }}/download">Download again</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint pad">Downloading again gives exactly the file that was made then.</p>
+  {% else %}
+  <p class="empty">No exports yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

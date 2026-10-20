@@ -1,6 +1,6 @@
 PY ?= .venv/bin/python
 
-.PHONY: install run test seed eval backup
+.PHONY: install run test seed eval check-export backup
 
 # One-time setup: create the virtual environment and install the libraries
 install:
@@ -23,6 +23,10 @@ seed:
 # Options go in ARGS, e.g. make eval ARGS="--only 05" or make eval ARGS="--no-cache"
 eval:
 	$(PY) -m eval.run $(ARGS)
+
+# Check a downloaded demo export against the answer keys: make check-export FILE=path/to/file.csv
+check-export:
+	$(PY) -m eval.check_export "$(FILE)"
 
 # Zip the data folder into backups/
 backup:

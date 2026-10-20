@@ -98,7 +98,8 @@ def test_demo_orders_cover_every_type_and_hard_case(demo_files):
     for path, answer in zip(orders, answers):
         text = ingest_file(path.name, path.read_bytes()).text
         for line in answer["lines"]:
-            assert line["source_span"] in text, (path.name, line["source_span"])
+            if text:  # a scanned order has no text: its lines are typed in by hand
+                assert line["source_span"] in text, (path.name, line["source_span"])
             if line["product_code"]:
                 assert line["unit_price"] is not None
         if answer["expected_export_rows"]:
