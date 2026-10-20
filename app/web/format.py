@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from pipeline.vocab import STATUS_LABELS, Status
 from pipeline.workdays import LONDON
@@ -35,6 +35,15 @@ def money(value: Decimal | None) -> str:
     if value is None:
         return ""
     return f"£{value:,.2f}"
+
+
+def pence(value: Decimal | None) -> str:
+    """An AI cost: 0.0123 -> '1.2p', 0.42 -> '42.0p', 1.5 -> '£1.50'."""
+    if value is None:
+        return ""
+    if value >= 1:
+        return money(value)
+    return f"{(value * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)}p"
 
 
 def qty(value: Decimal | None) -> str:

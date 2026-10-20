@@ -23,23 +23,38 @@
 </div>
 <p class="footnote">Demo clients are not included in these totals.</p>
 
-<section class="card" aria-labelledby="attention-title">
+<section class="card" id="attention" aria-labelledby="attention-title">
   <div class="card-head">
-    <h2 id="attention-title">Needs your attention</h2>
-    <span class="small muted">Anything the system was not sure about, across all clients</span>
+    <div>
+      <h2 id="attention-title">Needs your attention</h2>
+      <span class="small muted">Anything the system was not sure about, across all clients, oldest first</span>
+    </div>
+    <div class="filters" role="group" aria-label="Show only">
+      {% for key, label in data.filters %}
+      <a class="filter{% if data.attention_filter == key %} filter-on{% endif %}" href="/?attention={{ key }}#attention"
+         {% if data.attention_filter == key %}aria-current="true"{% endif %}>{{ label }} <span class="count">{{ data.attention_counts[key] }}</span></a>
+      {% endfor %}
+    </div>
   </div>
   {% for item in data.attention %}
   <div class="attention-row">
     <span class="pill {{ status_class(item.order.status) }}">{{ status_label(item.order.status) }}</span>
     <div class="attention-text">
       <div class="attention-issue">{{ item.issue }}</div>
-      <div class="attention-where">{{ item.client_name }} · {{ item.title }} · arrived {{ item.order.received_at | london("%a %H:%M") }}</div>
+      <div class="attention-where">{{ item.client_name }} · {{ item.title }} · arrived {{ item.order.received_at | london("%a %H:%M") }} · <span class="attention-wait">{{ item.waiting }}</span></div>
     </div>
     <a class="btn btn-secondary" href="/orders/{{ item.order.id }}">Review</a>
   </div>
   {% else %}
+  {% if data.attention_filter != "all" and data.attention_counts["all"] %}
+  <p class="empty">Nothing with this status. <a href="/?attention=all#attention">Show all {{ data.attention_counts["all"] }}</a>.</p>
+  {% else %}
   <p class="empty">Nothing needs you right now. Orders that need a check, have a problem or need passing on will show here, oldest first.</p>
+  {% endif %}
   {% endfor %}
+  {% if data.attention_more %}
+  <p class="footnote attention-more">And {{ data.attention_more }} more. Open a client's orders to see them all.</p>
+  {% endif %}
 </section>
 
 <section class="section" aria-labelledby="clients-title">
@@ -62,12 +77,29 @@
         <div><div class="stat-label">Exactly right</div><div class="stat-value">{{ s.exactly_right }}</div></div>
       </div>
       <div class="client-foot">{{ s.foot }}</div>
+      <div class="client-foot client-cost">{{ s.averages.text }}{% if s.averages.orders and s.averages.cost is none and not ai_prices_set() %} <span class="hint">(Add AI prices to .env to see costs)</span>{% endif %}</div>
+      {% if s.reminder %}<p class="notice notice-{{ s.reminder[0] }} small">{{ s.reminder[1] }}</p>{% endif %}
       <a class="btn btn-secondary" href="{{ s.cta_href }}">{{ s.cta_label }}</a>
+      {% if s.client.id == "demo" %}
+      {% include "partials/restart_demo.html" %}
+      {% endif %}
     </article>
     {% endfor %}
   </div>
   {% else %}
-  <div class="card empty">No clients yet. Use <a href="/clients/new">Add client</a> to set up the first one, or run <span class="mono">make seed</span> to load the demo client.</div>
+  <div class="card empty">No clients yet. Use <a href="/clients/new">Add client</a> to set up the first one.</div>
   {% endif %}
+  {% if not data.demo %}
+  <form class="demo-load" method="post" action="/demo/restart">
+    <p class="small muted">The demo client, Demo Cleaning Supplies, is fictional and used when pitching. It is not set up at the moment.</p>
+    <button class="btn btn-secondary" type="submit">Set up the demo client</button>
+  </form>
+  {% endif %}
+</section>
+
+<section class="section card card-body backup" aria-labelledby="backup-title">
+  <h2 id="backup-title">Back up</h2>
+  <p class="small muted">Downloads a zip of everything Order Desk holds: the database and every client's files. A copy is also kept in the backups folder. Keep backups somewhere safe, as they contain client data.</p>
+  <form method="post" action="/backup"><button class="btn btn-secondary" type="submit">Download a backup</button></form>
 </section>
 {% endblock %}

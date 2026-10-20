@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Trials · Order Desk{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Trials</h1>
+    <p class="lede">How each client's shadow trial is going: what the system made, compared with what their own staff entered.</p>
+  </div>
+</div>
+<section class="card">
+  {% if rows %}
+  <div class="table-scroll">
+    <table class="data-table trials-table">
+      <thead>
+        <tr>
+          <th scope="col">Client</th>
+          <th scope="col">Trial</th>
+          <th scope="col">Staff entries</th>
+          <th scope="col" class="nowrap">Exactly right</th>
+          <th scope="col" class="nowrap">Confidently wrong</th>
+          <th scope="col"><span class="visually-hidden">Action</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="strong-cell">{{ r.client.name }} <span class="pill pill-mode-{{ r.mode_key }} small">{{ r.mode_label }}</span>
+            {% if r.reminder %}<div class="notice notice-{{ r.reminder[0] }} small trial-reminder">{{ r.reminder[1] }}</div>{% endif %}</td>
+          <td class="nowrap">{{ r.day }}</td>
+          <td class="muted-cell">{{ r.staff }}</td>
+          <td class="nowrap">{{ r.exactly_right }}</td>
+          <td class="nowrap">{% if r.confidently_wrong_count is not none %}<span class="pill {{ 'pill-ready' if r.confidently_wrong_count == 0 else 'pill-problem' }}">{{ r.confidently_wrong }}</span>{% else %}{{ r.confidently_wrong }}{% endif %}</td>
+          <td class="action-cell"><a class="btn btn-secondary" href="/clients/{{ r.client.id }}/trial">Open</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">No clients yet. <a href="/clients/new">Add a client</a> to start a shadow trial, or set up the demo client from the Home screen.</p>
+  {% endif %}
+</section>
+{% endblock %}

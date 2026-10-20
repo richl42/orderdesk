@@ -1,0 +1,12 @@
+{# Start the demo again: on the demo client's Home card and in its Settings. Needs `request`. #}
+<details class="restart-demo">
+  <summary>Start the demo again</summary>
+  <form method="post" action="/demo/restart" class="confirm-form">
+    <p class="small muted">Removes every order, export, staff entries file and note on the demo client, and sets it up again from its files, as on the first day.</p>
+    <input type="hidden" name="back" value="{{ request.url.path }}">
+    <label class="field">Type DEMO to confirm
+      <input name="confirm" autocomplete="off" required pattern="[Dd][Ee][Mm][Oo]" placeholder="DEMO">
+    </label>
+    <button class="btn btn-secondary" type="submit">Start the demo again</button>
+  </form>
+</details>

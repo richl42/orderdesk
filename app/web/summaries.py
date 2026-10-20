@@ -6,7 +6,8 @@ Read-only queries. Every per-client query filters by client_id.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 
 from sqlmodel import Session, func, select
 
@@ -14,11 +15,15 @@ from app.db import scoped
 from app.models import CatalogueItem, Client, Comparison, Customer, Order, OutputTemplate
 from app.web import format as fmt
 from pipeline.vocab import CLASSIFICATION_LABELS, SETUP_STEPS, Classification, ClientMode, ComparisonResult, Status
-from pipeline.workdays import LONDON, trial_day
+from pipeline.workdays import LONDON, trial_day, working_days
 
 WAITING = [Status.READY, Status.CHECK, Status.PROBLEM]
 ATTENTION = [Status.CHECK, Status.PROBLEM, Status.PASS_ON]
 REQUIRED_SETUP = ["details", "catalogue", "customers", "output"]
+ATTENTION_FILTERS = [("all", "All"), (Status.CHECK, "Check"), (Status.PROBLEM, "Problem"), (Status.PASS_ON, "Pass on")]
+DELETE_WITHIN_DAYS = 30  # trial clients that do not continue are deleted within 30 days of the trial ending
+
+DEMO_ID = "demo"  # the demo client that Start the demo again rebuilds
 
 MODE_LABELS = {
     "demo": "Demo",
@@ -49,6 +54,63 @@ def mode_key(client: Client) -> str:
 
 
 @dataclass
+class Averages:
+    """Average AI cost and processing time per order, for the operator only."""
+    orders: int
+    cost: Decimal | None
+    cost_orders: int
+    tokens: int | None
+    seconds: float | None
+
+    @property
+    def text(self) -> str:
+        if not self.orders:
+            return "No orders read yet"
+        if self.cost is not None:
+            ai = f"AI {fmt.pence(self.cost)}"
+        else:
+            ai = f"AI {self.tokens:,} tokens" if self.tokens is not None else "AI not used"
+        read = f"read in {self.seconds:.1f}s" if self.seconds is not None else ""
+        return " · ".join(p for p in [f"Per order: {ai}", read] if p)
+
+
+def averages(session: Session, client_id: str) -> Averages:
+    rows = session.exec(select(Order.ai_cost_gbp, Order.ai_input_tokens, Order.ai_output_tokens, Order.processing_ms)
+                        .where(Order.client_id == client_id, Order.processing_state == "done")).all()
+    costs = [c for c, *_ in rows if c is not None]
+    tokens = [i + o for _, i, o, _ms in rows]
+    times = [ms for *_, ms in rows if ms is not None]
+    return Averages(
+        orders=len(rows),
+        cost=(sum(costs) / len(costs)) if costs else None,
+        cost_orders=len(costs),
+        tokens=round(sum(tokens) / len(tokens)) if tokens else None,
+        seconds=(sum(times) / len(times) / 1000) if times else None,
+    )
+
+
+def trial_end(client: Client) -> date | None:
+    if not client.trial_start_date or not client.trial_working_days:
+        return None
+    return working_days(client.trial_start_date, client.trial_working_days)[-1]
+
+
+def delete_reminder(client: Client, today: date) -> tuple[str, str] | None:
+    """(kind, text) for a trial client whose trial is over: their data must go within 30 days unless they continue."""
+    if client.mode != ClientMode.TRIAL:
+        return None
+    end = trial_end(client)
+    if end is None or today <= end:
+        return None
+    by = end + timedelta(days=DELETE_WITHIN_DAYS)
+    if today > by:
+        return "problem", (f"Trial ended {fmt.long_date(end)}: their data should have been deleted by "
+                           f"{fmt.long_date(by)}. Delete it in Settings, or switch them to Live if they continued.")
+    return "check", (f"Trial ended {fmt.long_date(end)}: delete their data by {fmt.long_date(by)} "
+                     f"unless they continue.")
+
+
+@dataclass
 class ClientSummary:
     client: Client
     mode_key: str
@@ -65,6 +127,8 @@ class ClientSummary:
     cta_href: str
     trial_day: int | None = None
     output_file: str = ""
+    averages: Averages | None = None
+    reminder: tuple[str, str] | None = None
 
 
 def exactly_right_since(session: Session, client_ids: list[str], since: datetime) -> tuple[int, int]:
@@ -143,6 +207,8 @@ def summarise_client(session: Session, client: Client, now: datetime) -> ClientS
         cta_href=cta[1],
         trial_day=day,
         output_file=template.source_filename if template else "",
+        averages=averages(session, cid),
+        reminder=delete_reminder(client, now.astimezone(LONDON).date()),
     )
 
 
@@ -160,6 +226,7 @@ class AttentionItem:
     customer_name: str
     issue: str
     title: str
+    waiting: str = ""
 
 
 @dataclass
@@ -167,6 +234,11 @@ class HomeData:
     tiles: list[Tile]
     attention: list[AttentionItem]
     clients: list[ClientSummary] = field(default_factory=list)
+    attention_counts: dict[str, int] = field(default_factory=dict)
+    attention_filter: str = "all"
+    attention_more: int = 0
+    filters: list[tuple[str, str]] = field(default_factory=lambda: list(ATTENTION_FILTERS))
+    demo: Client | None = None
 
 
 def order_issue(order: Order) -> str:
@@ -185,7 +257,18 @@ def order_issue(order: Order) -> str:
     return "Needs a look"
 
 
-def home_data(session: Session, now: datetime | None = None) -> HomeData:
+ATTENTION_LIMIT = 100
+
+
+def waited(moment: datetime, now: datetime) -> str:
+    """How long an order has been waiting, in plain words."""
+    text = fmt.ago(moment, now)
+    if moment > now:  # test orders can be dated later in the week
+        return "Arrives later"
+    return "Arrived just now" if text == "just now" else f"Waiting {text.removesuffix(' ago')}"
+
+
+def home_data(session: Session, now: datetime | None = None, attention_filter: str = "all") -> HomeData:
     now = now or datetime.now(timezone.utc)
     clients = session.exec(select(Client).where(Client.archived_at.is_(None))).all()
     clients = sorted(clients, key=lambda c: (c.mode == ClientMode.DEMO, c.name.lower()))
@@ -223,9 +306,18 @@ def home_data(session: Session, now: datetime | None = None) -> HomeData:
     ]
 
     names = {c.id: c.name for c in clients}
+    counts = {key: 0 for key, _ in ATTENTION_FILTERS}
+    if names:
+        for status, n in session.exec(select(Order.status, func.count()).where(
+                Order.client_id.in_(list(names)), Order.status.in_(ATTENTION)).group_by(Order.status)).all():
+            counts[status] = n
+    counts["all"] = sum(counts[s] for s in ATTENTION)
+    if attention_filter not in counts:
+        attention_filter = "all"
+    shown = ATTENTION if attention_filter == "all" else [attention_filter]
     attention_orders = session.exec(
-        select(Order).where(Order.client_id.in_(list(names)), Order.status.in_(ATTENTION))
-        .order_by(Order.received_at).limit(100)
+        select(Order).where(Order.client_id.in_(list(names)), Order.status.in_(shown))
+        .order_by(Order.received_at, Order.id).limit(ATTENTION_LIMIT)
     ).all() if names else []
     customer_ids = {o.customer_id for o in attention_orders if o.customer_id}
     customer_names = {c.id: c.name for c in session.exec(select(Customer).where(Customer.id.in_(customer_ids))).all()} \
@@ -236,6 +328,9 @@ def home_data(session: Session, now: datetime | None = None) -> HomeData:
         who = customer_names.get(order.customer_id) or order.sender_email or "Unknown sender"
         title = f"PO {order.po_number} from {who}" if order.po_number else f"Order from {who}"
         attention.append(AttentionItem(order=order, client_name=names[order.client_id],
-                                       customer_name=who, issue=order_issue(order), title=title))
+                                       customer_name=who, issue=order_issue(order), title=title,
+                                       waiting=waited(order.received_at, now)))
 
-    return HomeData(tiles=tiles, attention=attention, clients=summaries)
+    return HomeData(tiles=tiles, attention=attention, clients=summaries, attention_counts=counts,
+                    attention_filter=attention_filter, attention_more=max(0, counts[attention_filter] - len(attention)),
+                    demo=next((c for c in clients if c.id == DEMO_ID), None))

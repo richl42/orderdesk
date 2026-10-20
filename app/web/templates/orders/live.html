@@ -41,7 +41,7 @@
     <div class="card-head">
       <h2 id="queue-title"><span class="step-kicker inline">STEP 2</span>Review and approve orders</h2>
       <div class="filters" role="group" aria-label="Filter by status">
-        {% for key, label in [("all", "All"), ("ready", "Ready"), ("check", "Check"), ("problem", "Problem"), ("pass_on", "Pass on"), ("approved", "Approved")] %}
+        {% for key, label in q.filters %}
         <a class="filter{% if q.current == key %} filter-on{% endif %}" href="/clients/{{ client.id }}/orders?status={{ key }}"
            hx-get="/clients/{{ client.id }}/orders/live?status={{ key }}" hx-target="#queue-live" hx-swap="outerHTML"
            hx-push-url="/clients/{{ client.id }}/orders?status={{ key }}"
@@ -60,6 +60,7 @@
             <th scope="col">Came as</th>
             <th scope="col">Lines</th>
             <th scope="col">Status</th>
+            <th scope="col" class="nowrap" title="How long the system took to read it, and what the AI cost">Read in</th>
             <th scope="col"><span class="visually-hidden">Action</span></th>
           </tr>
         </thead>
@@ -77,6 +78,7 @@
                 <span class="status-note">{{ row.pill.note }}</span>
               </div>
             </td>
+            <td class="mono muted-cell nowrap">{{ row.cost }}</td>
             <td class="action-cell">
               {% if row.retry %}
               <form method="post" action="/clients/{{ client.id }}/orders/{{ row.order.id }}/retry"
@@ -92,8 +94,9 @@
         </tbody>
       </table>
     </div>
+    {% if not q.prices_set %}<p class="footnote table-note">Read in shows AI tokens. Add AI prices to .env to see costs.</p>{% endif %}
     {% elif q.counts["all"] %}
-    <p class="empty">No orders with this status.</p>
+    <p class="empty">No orders with this status. <a href="/clients/{{ client.id }}/orders">Show all {{ q.counts["all"] }}</a>.</p>
     {% else %}
     <p class="empty">No orders yet. Upload the files customers sent, or paste an email above.</p>
     {% endif %}

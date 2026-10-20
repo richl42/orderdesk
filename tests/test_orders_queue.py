@@ -251,7 +251,7 @@ def test_load_the_demo_orders_uses_each_answer_keys_sender_and_time(logged_in, s
 def test_demo_orders_missing_says_run_make_seed(logged_in, demo_client, fake_ai, monkeypatch, tmp_path):
     monkeypatch.setattr("seed.demo_data.SEED_DIR", tmp_path / "nowhere")
     response = logged_in.post("/clients/demo/orders/demo", headers={"HX-Request": "true"})
-    assert "Run make seed first." in response.text
+    assert "Use Start the demo again on the Home screen." in response.text
 
 
 def test_demo_button_only_for_demo_clients(logged_in, session, fake_ai):

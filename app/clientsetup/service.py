@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta, timezone
 from pathlib import Path
 
 from sqlmodel import Session, select
@@ -21,7 +21,6 @@ from pipeline.tables import (
     FIELDS,
     IGNORE,
     OUTPUT_FIELDS,
-    REQUIRED,
     column_for,
     duplicate_values,
     guess_mapping,

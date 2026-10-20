@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,10 +10,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlmodel import Session, func, select
 
+from app.config import get_settings
 from app.db import get_session
 from app.models import Client, Customer, Order, OrderLine, OutputTemplate
 from app.orders import service
-from app.web.format import london
+from app.web.format import london, pence
 from app.web.pages import get_client
 from app.web.summaries import WAITING, london_day_bounds, order_issue, summarise_client
 from app.web.templating import templates
@@ -30,6 +31,7 @@ FILTERS = [
     (Status.PROBLEM, "Problem"),
     (Status.PASS_ON, "Pass on"),
     (Status.APPROVED, "Approved"),
+    (Status.EXPORTED, "Exported"),
 ]
 
 
@@ -85,6 +87,21 @@ class OrderRow:
     action: str
     href: str
     retry: bool
+    cost: str = ""
+
+
+def cost_text(order: Order) -> str:
+    """Read time and AI cost of one order, for the operator only. Tokens when no AI prices are set."""
+    if order.processing_state in (service.READING, service.READ):
+        return ""
+    parts = []
+    if order.processing_ms is not None:
+        parts.append(f"{order.processing_ms / 1000:.1f}s")
+    if order.ai_cost_gbp is not None:
+        parts.append(pence(order.ai_cost_gbp))
+    elif order.ai_input_tokens or order.ai_output_tokens:
+        parts.append(f"{order.ai_input_tokens + order.ai_output_tokens:,} tokens")
+    return " · ".join(parts)
 
 
 @dataclass
@@ -100,6 +117,8 @@ class QueueData:
     approved: int
     output_file: str
     start_href: str | None
+    filters: list[tuple[str, str]] = field(default_factory=lambda: list(FILTERS))
+    prices_set: bool = True
 
     @property
     def polling(self) -> bool:
@@ -144,6 +163,7 @@ def queue_data(session: Session, client: Client, current: str = "all", now: date
             action="Open" if order.status in (Status.APPROVED, Status.EXPORTED, Status.PASS_ON) else "Review",
             href=f"/clients/{client.id}/orders/{order.id}",
             retry=order.processing_state == service.FAILED,
+            cost=cost_text(order),
         ))
 
     today_start, today_end = london_day_bounds(now)
@@ -161,6 +181,7 @@ def queue_data(session: Session, client: Client, current: str = "all", now: date
         approved=counts[Status.APPROVED],
         output_file=template.source_filename if template else "",
         start_href=f"/clients/{client.id}/orders/{waiting[0].id}" if waiting else None,
+        prices_set=get_settings().ai_prices_set,
     )
 
 

@@ -127,6 +127,9 @@
 <details class="card card-body details-for-you">
   <summary class="label-strong">Details for you</summary>
   <p>First pass exact: {% if m.first_pass_exact is not none %}<strong>{{ m.first_pass_exact }} of {{ m.first_pass_known }}</strong> ({{ "%.1f" | format(100 * m.first_pass_exact / m.first_pass_known) }}%) of the compared orders were exactly right as the system first made them, before any correction{% else %}not known for these orders{% endif %}.</p>
+  {% set a = summary.averages %}
+  <p>Average AI cost: {% if a.cost is not none %}<strong>{{ a.cost | pence }}</strong> per order{% elif a.tokens is not none and a.orders %}<strong>{{ "{:,}".format(a.tokens) }} tokens</strong> per order. Add AI prices to .env to see costs{% else %}no orders read yet{% endif %}.
+     Average processing time: {% if a.seconds is not none %}<strong>{{ "%.1f" | format(a.seconds) }} seconds</strong> per order{% else %}not known yet{% endif %}.{% if a.orders %} Over {{ a.orders }} order{{ "" if a.orders == 1 else "s" }} read for {{ client.name }}.{% endif %}</p>
   <p class="hint">Not shown in the client report.</p>
 </details>
 {% endif %}

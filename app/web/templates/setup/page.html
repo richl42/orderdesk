@@ -34,6 +34,24 @@
     <a class="btn btn-secondary" href="/clients/{{ client.id }}/orders?paste=1">Test with a past order</a>
     <form method="post" action="/clients/{{ client.id }}/setup/finish"><button class="btn btn-primary" type="submit">Save client</button></form>
   </div>
+
+  {% if client.id == "demo" %}
+  <section class="card card-body setup-extra" aria-labelledby="restart-title">
+    <h2 id="restart-title">Start the demo again</h2>
+    {% include "partials/restart_demo.html" %}
+  </section>
+  {% endif %}
+
+  <section class="card card-body setup-extra danger-zone" id="delete" aria-labelledby="delete-title">
+    <h2 id="delete-title">Delete this client</h2>
+    <p class="small muted">Removes every order, line, export file, staff entries file, comparison, remembered phrasing and setting for {{ client.name }}, and their folder of files. This cannot be undone, so download a backup from the Home screen first if you might need it. Trial clients that do not continue are deleted within 30 days of the trial ending.</p>
+    <form method="post" action="/clients/{{ client.id }}/delete" class="confirm-form">
+      <label class="field">Type the client's name, <strong>{{ client.name }}</strong>, to confirm
+        <input name="confirm" autocomplete="off" required>
+      </label>
+      <button class="btn btn-danger" type="submit">Delete {{ client.name }} and all their data</button>
+    </form>
+  </section>
 {% else %}
   {{ locked(2, "Product catalogue", "What every order line gets matched against. Excel or CSV.") }}
   {{ locked(3, "Customer list", "Lets the system work out who each order is from, and where it is going.") }}

@@ -534,3 +534,27 @@ body.report { background: #fff; }
   .report-table tr { break-inside: avoid; }
   a { color: inherit; text-decoration: none; }
 }
+
+/* ---------------------------------------------------------------- Milestone 8: polish */
+.page > .notices { margin-bottom: 16px; }
+.request-error { position: sticky; top: 8px; z-index: 20; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); }
+.request-error[hidden] { display: none; }
+.btn-danger { background: var(--card); color: var(--problem-fg); border: 1px solid var(--problem-fg); }
+.btn-danger:hover { background: var(--problem-bg); color: var(--problem-fg); }
+.setup-extra { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.setup-extra h2 { margin: 0; }
+.danger-zone { border-color: var(--problem-bg); }
+.confirm-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.confirm-form p { flex-basis: 100%; margin: 0; }
+.confirm-form .field { flex: 1 1 240px; max-width: 360px; }
+.restart-demo summary { cursor: pointer; font-size: 14px; color: var(--text-2); }
+.restart-demo[open] summary { margin-bottom: 10px; }
+.client-cost { margin-top: -4px; }
+.demo-load { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.demo-load p { margin: 0; }
+.backup { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.backup h2, .backup p { margin: 0; }
+.attention-wait { white-space: nowrap; }
+.attention-more { margin: 0; padding: 12px 20px; }
+.table-note { margin: 0; padding: 10px 20px 14px; }
+.trial-reminder { margin-top: 6px; font-weight: 400; }

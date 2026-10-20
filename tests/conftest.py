@@ -17,6 +17,7 @@ def isolated_settings(tmp_path: Path, monkeypatch):
     """Every test gets its own empty data folder and database, and never reads the real .env."""
     monkeypatch.setenv("ORDERDESK_ENV_FILE", str(tmp_path / "no.env"))
     monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("BACKUPS_DIR", str(tmp_path / "backups"))
     monkeypatch.setenv("APP_PASSWORD", TEST_PASSWORD)
     monkeypatch.setenv("SECRET_KEY", "test-secret-key")
     monkeypatch.setenv("OPERATOR_NAME", "Rich")

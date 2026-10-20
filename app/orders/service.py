@@ -290,14 +290,14 @@ def load_demo_orders(session: Session, client: Client, seed_dir: Path) -> tuple[
     """Upload the demo client's 20 test orders, each with the sender and arrival time in its answer key."""
     orders_dir, answers_dir = seed_dir / "orders", seed_dir / "answers"
     if not orders_dir.is_dir() or not answers_dir.is_dir():
-        return [], [], "The demo files are missing. Run make seed first."
+        return [], [], "The demo files are missing. Use Start the demo again on the Home screen."
     all_orders: list[Order] = []
     all_refused: list[Refused] = []
     for answer_path in sorted(answers_dir.glob("*.json")):
         answer = json.loads(answer_path.read_text(encoding="utf-8"))
         path = orders_dir / answer["file"]
         if not path.exists():
-            all_refused.append(Refused(answer["file"], "File missing. Run make seed again."))
+            all_refused.append(Refused(answer["file"], "File missing. Use Start the demo again on the Home screen."))
             continue
         received = datetime.fromisoformat(answer["received_at"].replace("Z", "+00:00"))
         orders, refused = receive_files(session, client, [(path.name, path.read_bytes())],

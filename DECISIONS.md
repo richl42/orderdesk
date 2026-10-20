@@ -145,3 +145,16 @@ Assumptions made while building, one line each. Agreed with Rich on 19 Oct 2026 
 - Day by day tiles go by the day our order arrived. A trial day with results shows them even if it is today or later (the demo's orders run to Fri 23 Oct); otherwise Today, Upcoming, or None.
 - The summary paragraph is written by code from the real numbers, not by the AI. Once edited, the operator's wording is kept until they ask for it to be written again.
 - The client report is its own print-friendly page (Print or save as PDF), with the tiles, summary, day by day results and differences with their causes; never AI cost, review time, first pass or other internal figures.
+
+## Milestone 8
+- Start the demo again does exactly what make seed does (writes the demo files, rebuilds the demo client with no orders) and needs DEMO typed. It is on the demo card and in the demo client's Settings. When there is no demo client, Home offers Set up the demo client with no confirmation, as there is nothing to lose.
+- Load the 20 test orders is offered for any client in Demo mode; it reads the files Start the demo again writes.
+- The Home backup button makes the same zip as make backup (database first checkpointed so the zip opens on its own), downloads it, and keeps a copy in backups/ (BACKUPS_DIR in .env to move it). Two backups in the same second get _2.
+- Delete client is at the bottom of Settings and needs the client's name typed (spaces and capitals don't matter). It removes every client row and the client's folder, then returns to Home with a notice.
+- The 30-day rule is a reminder, not an automatic delete: a Shadow trial client whose last trial working day has passed shows "Trial ended X: delete their data by Y" (Y = 30 days later) on Home and Trials, in red once Y has passed. Switching the client to Live removes it.
+- AI cost and read time are for the operator only: per order in the queue (Read in), as averages on the client card and in the trial page's Details for you. They never appear in the client report. With no AI prices in .env, tokens are shown with "Add AI prices to .env to see costs". Costs under £1 show in pence to one decimal place, rounded half up.
+- Needs your attention has All, Check, Problem and Pass on filters with counts across all clients, shows how long each order has waited, and lists up to 100 (saying how many more there are). The queue gains an Exported filter.
+- The Trials page lists every client with trial day, when staff entries were loaded, exactly right and confidently wrong.
+- An unexpected error shows a plain "Something went wrong" page; the details go to data/logs/errors.log and, when the page was about one client, an "error" event in that client's event log. A failed button that updates part of a page shows a plain notice at the top instead of doing nothing.
+- One-off notices after a redirect (deleted, demo started again, wrong confirmation) are kept in the login cookie until the next page shows them.
+

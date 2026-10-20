@@ -30,19 +30,19 @@ def mapping_form(section_html: str) -> dict:
     """The dropdown values the page pre-selected, as a browser would submit them."""
     import re
     form = {}
-    for select in re.finditer(r'<select name="(map_\d+)".*?</select>', section_html, flags=re.S):
-        chosen = re.search(r'<option value="([^"]+)" selected', select.group(0))
-        form[select.group(1)] = chosen.group(1) if chosen else "ignore"
+    for match in re.finditer(r'<select name="(map_\d+)".*?</select>', section_html, flags=re.S):
+        chosen = re.search(r'<option value="([^"]+)" selected', match.group(0))
+        form[match.group(1)] = chosen.group(1) if chosen else "ignore"
     return form
 
 
 def output_form(section_html: str) -> dict:
     import re
     form = {}
-    for select in re.finditer(r'<select name="([a-z_0-9]+)".*?</select>', section_html, flags=re.S):
-        chosen = re.search(r'<option value="([^"]*)" selected', select.group(0))
+    for match in re.finditer(r'<select name="([a-z_0-9]+)".*?</select>', section_html, flags=re.S):
+        chosen = re.search(r'<option value="([^"]*)" selected', match.group(0))
         if chosen:
-            form[select.group(1)] = chosen.group(1)
+            form[match.group(1)] = chosen.group(1)
     if 'name="include_header" checked' in section_html:
         form["include_header"] = "on"
     return form

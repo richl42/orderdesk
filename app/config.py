@@ -55,6 +55,11 @@ class Settings:
     ai_price_output_per_mtok: Decimal | None
     operator_name: str
     ai_cache: bool = False  # keep AI answers by request hash (the accuracy test always does)
+    backups_dir: Path = PROJECT_DIR / "backups"
+
+    @property
+    def ai_prices_set(self) -> bool:
+        return self.ai_price_input_per_mtok is not None and self.ai_price_output_per_mtok is not None
 
     @property
     def db_path(self) -> Path:
@@ -78,6 +83,9 @@ def get_settings() -> Settings:
     data_dir = Path(values.get("DATA_DIR") or "data")
     if not data_dir.is_absolute():
         data_dir = PROJECT_DIR / data_dir
+    backups_dir = Path(values.get("BACKUPS_DIR") or "backups")
+    if not backups_dir.is_absolute():
+        backups_dir = PROJECT_DIR / backups_dir
 
     return Settings(
         # ORDERDESK_ANTHROPIC_API_KEY is for cloud build sessions, where ANTHROPIC_API_KEY may not get through.
@@ -90,4 +98,5 @@ def get_settings() -> Settings:
         ai_price_output_per_mtok=_decimal(values.get("AI_PRICE_OUTPUT_PER_MTOK")),
         operator_name=values.get("OPERATOR_NAME") or "Rich",
         ai_cache=(values.get("AI_CACHE") or "").lower() in {"1", "on", "true", "yes"},
+        backups_dir=backups_dir,
     )

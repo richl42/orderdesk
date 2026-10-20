@@ -8,10 +8,10 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import auth
+from app import auth, errors
 from app.db import get_engine
 from app.orders import service as orders_service
-from app.web import exports, orders, pages, review, setup, trial
+from app.web import admin, exports, orders, pages, review, setup, trial
 from app.web.templating import templates
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(review.router)
     app.include_router(exports.router)
     app.include_router(trial.router)
+    app.include_router(admin.router)
 
     @app.exception_handler(404)
     async def not_found(request: Request, exc):
@@ -47,6 +48,16 @@ def create_app() -> FastAPI:
             "nav": "", "title": "Page not found",
             "message": "There is nothing at this address. Use the links above to find your way back.",
         }, status_code=404)
+
+    @app.exception_handler(Exception)
+    async def server_error(request: Request, exc: Exception):
+        """A plain message on screen; the details go to the event log and data/logs/errors.log only."""
+        errors.record(request, exc)
+        return templates.TemplateResponse(request, "not_built.html", {
+            "nav": "", "title": "Something went wrong",
+            "message": "That did not finish because something went wrong on our side. "
+                       "Go back and try again. If it keeps happening, the details are in the event log.",
+        }, status_code=500)
 
     return app
 
