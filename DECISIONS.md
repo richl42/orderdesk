@@ -158,3 +158,14 @@ Assumptions made while building, one line each. Agreed with Rich on 19 Oct 2026 
 - An unexpected error shows a plain "Something went wrong" page; the details go to data/logs/errors.log and, when the page was about one client, an "error" event in that client's event log. A failed button that updates part of a page shows a plain notice at the top instead of doing nothing.
 - One-off notices after a redirect (deleted, demo started again, wrong confirmation) are kept in the login cookie until the next page shows them.
 
+## Deployment (asked for by Rich, from the Later list's "hosting on a server")
+- Render is the main target (Blueprint in render.yaml: Starter plan, Frankfurt, 1 GB disk at /var/data, auto deploy off); Railway works with railway.json plus a volume added in its dashboard (RAILWAY_VOLUME_MOUNT_PATH is used as DATA_DIR if DATA_DIR is not set).
+- One process, one worker (python -m app.serve): orders are read in background threads and the database is one SQLite file, so no second replica.
+- APP_ENV=production turns on the HTTPS-only login cookie and HSTS, and makes the app refuse to start with a password under 12 characters, a SECRET_KEY under 32 characters, no DATA_DIR (or one that doesn't exist), or AI_CACHE on (the cache keeps order text that deleting a client does not remove). The host's proxy headers are trusted so the app sees HTTPS and the visitor's address.
+- Every page gets security headers: a Content-Security-Policy allowing scripts only from /static (the two inline handlers moved into app.js, and htmx's eval is off), no framing, nosniff, and no-store so pages with client data are never cached.
+- Form posts whose Origin or Referer is another site are refused (on top of the SameSite=Lax cookie). Posts with neither header are let through, as tests and scripts send none; the login cookie is still needed.
+- Wrong passwords: 5 from one address in 15 minutes locks that address for 15 minutes, and 30 from anywhere in 15 minutes locks everyone out for 15 minutes, in case addresses are faked. Kept in memory, so a restart clears it.
+- Uploads over MAX_UPLOAD_MB (25 by default) at once are refused with a plain message.
+- /healthz answers {"ok": true} without login, for the host's health check, and shows nothing else.
+- On a server, backups go to <DATA_DIR>/backups, and a backup never includes that folder.
+

@@ -25,8 +25,14 @@ def isolated_settings(tmp_path: Path, monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("ORDERDESK_ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("AI_CACHE", raising=False)
+    monkeypatch.delenv("APP_ENV", raising=False)
+    monkeypatch.delenv("RAILWAY_VOLUME_MOUNT_PATH", raising=False)
     get_settings.cache_clear()
     db.reset_engine()
+    from app import security
+
+    for limiter in (security.login_limiter, security.all_logins_limiter):
+        limiter._failures.clear()
     yield
     db.reset_engine()
     get_settings.cache_clear()

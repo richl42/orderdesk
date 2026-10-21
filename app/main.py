@@ -8,7 +8,8 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import auth, errors
+from app import auth, errors, security
+from app.config import check_production, get_settings
 from app.db import get_engine
 from app.orders import service as orders_service
 from app.web import admin, exports, orders, pages, review, setup, trial
@@ -18,6 +19,8 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 
 def create_app() -> FastAPI:
+    settings = get_settings()
+    check_production(settings)  # on a server: refuse to start with weak secrets or data on a wiped disk
     get_engine()  # creates the database and tables on first run
     orders_service.resume_unfinished()
 
@@ -30,8 +33,10 @@ def create_app() -> FastAPI:
         session_cookie="orderdesk_session",
         max_age=auth.IDLE_LIMIT_SECONDS,
         same_site="lax",
-        https_only=False,
+        https_only=settings.production,  # on a server the login cookie is only ever sent over HTTPS
     )
+    app.add_middleware(security.RequestChecks)
+    app.add_middleware(security.SecurityHeaders)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.include_router(auth.router)
     app.include_router(pages.router)

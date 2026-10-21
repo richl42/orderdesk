@@ -3,8 +3,8 @@ backups/orderdesk-backup-<date>_<time>.zip."""
 
 from __future__ import annotations
 
-import shutil
 import sqlite3
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -19,8 +19,11 @@ def make_backup(backups_dir: Path | None = None) -> Path:
         raise SystemExit(f"Nothing to back up: {data_dir} does not exist yet.")
     if settings.db_path.exists():
         # Write recent changes from the WAL file into the database file, so the zip opens on its own.
-        with sqlite3.connect(settings.db_path) as conn:
+        conn = sqlite3.connect(settings.db_path)
+        try:
             conn.execute("PRAGMA wal_checkpoint(FULL)")
+        finally:
+            conn.close()
     backups_dir = backups_dir or settings.backups_dir
     backups_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(LONDON).strftime("%Y-%m-%d_%H%M%S")
@@ -29,8 +32,15 @@ def make_backup(backups_dir: Path | None = None) -> Path:
     while base.with_suffix(".zip").exists():  # two backups in the same second
         base = backups_dir / f"orderdesk-backup-{stamp}_{n}"
         n += 1
-    archive = shutil.make_archive(str(base), "zip", root_dir=data_dir)
-    return Path(archive)
+    archive = base.with_suffix(".zip")
+    skip = backups_dir.resolve()
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for path in sorted(data_dir.rglob("*")):
+            # On a server the backups folder is inside the data folder: never put old backups in a new one.
+            if not path.is_file() or path.resolve().is_relative_to(skip):
+                continue
+            zf.write(path, path.relative_to(data_dir).as_posix())
+    return archive
 
 
 if __name__ == "__main__":

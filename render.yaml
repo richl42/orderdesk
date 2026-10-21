@@ -1,0 +1,41 @@
+# Render Blueprint: Dashboard > New > Blueprint, pick this repository.
+# One web service with a persistent disk for the data folder. Render provides HTTPS.
+services:
+  - type: web
+    name: orderdesk
+    runtime: python
+    plan: starter            # a persistent disk needs a paid instance; the free plan has none
+    region: frankfurt        # EU, for UK client data
+    branch: main             # change if you deploy from another branch
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.serve
+    healthCheckPath: /healthz
+    autoDeploy: false        # deploy when you choose, not on every push
+    disk:
+      name: orderdesk-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5-5
+      - key: AI_CACHE
+        value: "off"
+      - key: OPERATOR_NAME
+        value: Rich
+      - key: SECRET_KEY
+        generateValue: true  # Render makes a long random value
+      # Secrets you type in on the dashboard when the Blueprint is created (never in this file):
+      - key: APP_PASSWORD
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AI_PRICE_INPUT_PER_MTOK
+        sync: false
+      - key: AI_PRICE_OUTPUT_PER_MTOK
+        sync: false

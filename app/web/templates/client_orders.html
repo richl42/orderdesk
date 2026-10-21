@@ -60,7 +60,7 @@
 <section class="card paste-box" id="paste-box" {% if not paste_open %}hidden{% endif %} aria-labelledby="paste-title">
   <form method="post" action="/clients/{{ client.id }}/orders/paste"
         hx-post="/clients/{{ client.id }}/orders/paste" hx-target="#queue-live" hx-swap="outerHTML"
-        hx-on::after-request="if (event.detail.successful) this.reset()">
+        data-reset-after-success>
     <div class="card-head">
       <h2 id="paste-title">Paste an email</h2>
       <button type="button" class="btn btn-secondary" data-close="paste-box">Close</button>

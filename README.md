@@ -28,6 +28,12 @@ Once the app is running, everything else is done on screen:
 - If something goes wrong, the screen shows a plain message and the details go to `data/logs/errors.log`
   (and the client's event log).
 
+## Run it on a server
+
+See [docs/DEPLOY.md](docs/DEPLOY.md) for Render (Blueprint in `render.yaml`) or Railway. In short: a
+persistent disk for the data folder, `APP_ENV=production`, the secrets as environment variables, and
+the start command `python -m app.serve`.
+
 ## Commands
 
 | Command | What it does |

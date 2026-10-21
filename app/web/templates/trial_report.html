@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shadow trial report · {{ client.name }}</title>
 <link rel="stylesheet" href="/static/css/app.css">
+<script src="/static/js/app.js" defer></script>
 </head>
 <body class="report">
 {% set m = v.measures %}
 <main class="report-page">
   <div class="report-actions no-print">
-    <button type="button" class="btn btn-primary" onclick="window.print()">Print or save as PDF</button>
+    <button type="button" class="btn btn-primary" data-print>Print or save as PDF</button>
     <a class="btn btn-secondary" href="/clients/{{ client.id }}/trial">Back to trial results</a>
   </div>
 

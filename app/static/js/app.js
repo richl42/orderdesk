@@ -20,6 +20,14 @@
   document.addEventListener("htmx:sendError", function () {
     show("Order Desk could not be reached. Check it is still running, then try again.");
   });
+  // No inline handlers, so the pages run under a strict Content-Security-Policy.
+  document.addEventListener("click", function (event) {
+    if (event.target.closest("[data-print]")) window.print();
+  });
+  document.addEventListener("htmx:afterRequest", function (event) {
+    var form = event.detail.elt;
+    if (event.detail.successful && form && form.matches && form.matches("form[data-reset-after-success]")) form.reset();
+  });
   document.addEventListener("htmx:beforeRequest", function () {
     var box = document.getElementById("request-error");
     if (box) box.hidden = true;

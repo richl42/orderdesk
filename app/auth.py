@@ -12,10 +12,11 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import get_settings
+from app.security import client_address, login_failed, login_succeeded, login_wait_seconds
 from app.web.templating import templates
 
 IDLE_LIMIT_SECONDS = 8 * 60 * 60
-OPEN_PATHS = ("/login", "/static/")
+OPEN_PATHS = ("/login", "/static/", "/healthz")
 
 router = APIRouter()
 
@@ -69,15 +70,31 @@ def login_page(request: Request):
 
 @router.post("/login")
 def login(request: Request, password: str = Form("")):
+    address = client_address(request)
+    wait = login_wait_seconds(address)
+    if wait:
+        minutes = max(1, round(wait / 60))
+        return templates.TemplateResponse(request, "login.html", {
+            "error": f"Too many wrong passwords. Wait {minutes} minute{'s' if minutes != 1 else ''}, then try again.",
+            "no_password": False,
+        }, status_code=429)
     if password_matches(password):
+        login_succeeded(address)
         request.session.clear()
         request.session["logged_in"] = True
         request.session["last_seen"] = int(time.time())
         return RedirectResponse("/", status_code=303)
+    login_failed(address)
     return templates.TemplateResponse(request, "login.html", {
         "error": "That password is not right. Try again.",
         "no_password": not get_settings().app_password,
     }, status_code=401)
+
+
+@router.get("/healthz")
+def healthz():
+    """For the host's health check: says the app is up, and nothing else."""
+    return {"ok": True}
 
 
 @router.post("/logout")
