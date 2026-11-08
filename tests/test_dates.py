@@ -29,7 +29,9 @@ MONDAY_MORNING = datetime(2026, 10, 12, 9, 14, tzinfo=LONDON)
     ("22 Oct 2026", date(2026, 10, 22)),
     ("October 22nd", date(2026, 10, 22)),
     ("Friday 16 October", date(2026, 10, 16)),
-    ("Thursday 22nd", None),  # no month
+    ("Thursday 22nd", date(2026, 10, 22)),  # no month, but only one Thursday in the next two months is the 22nd
+    ("Friday 30th", date(2026, 10, 30)),
+    ("on Monday 2nd please", date(2026, 11, 2)),
     ("by Friday 16th October", date(2026, 10, 16)),
     ("10/10", date(2026, 10, 10)),  # in the past: kept, so the past-date check catches it
 ])
@@ -42,6 +44,8 @@ def test_dates_from_a_monday_morning(words, expected):
     "Thursday 23rd October",  # the 23rd is a Friday: ask, don't pick one
     "next Thursday",  # said on a Monday: this week or next?
     "tomorrow Thursday",  # tomorrow is Tuesday
+    "Thursday 23rd",  # the 23rd is a Friday this month, and no Thursday is the 23rd for months
+    "Monday 16th 17th",  # two day numbers
     "31/02/2026",
 ])
 def test_unclear_dates_give_no_date(words):

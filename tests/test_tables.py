@@ -131,6 +131,22 @@ def test_output_template_detection(demo_files):
     assert guess.fill["Notes"] == {"field": "delivery_notes"}
 
 
+def test_output_template_with_order_number_and_order_quantity_headings(tmp_path):
+    """The Unleashed-style headings of the Harbourside practice client."""
+    path = write_csv(tmp_path / "imp.csv", [
+        ["Customer Code", "Order Number", "Order Date", "Required Date", "Product Code", "Order Quantity",
+         "Unit Price", "Comments"],
+        ["EXAMPLE01", "PO-1001", "2026-11-02", "2026-11-04", "ABC-100", "3", "12.50", "Back door"]])
+    guess = guess_output_template(path)
+    assert guess.fill == {
+        "Customer Code": {"field": "account_code"}, "Order Number": {"field": "po_number"},
+        "Order Date": {"field": "date_received"}, "Required Date": {"field": "delivery_date"},
+        "Product Code": {"field": "product_code"}, "Order Quantity": {"field": "quantity"},
+        "Unit Price": {"field": "price"}, "Comments": {"field": "delivery_notes"},
+    }
+    assert guess.date_format == "%Y-%m-%d"
+
+
 def test_output_template_without_header_and_iso_dates(tmp_path):
     path = write_csv(tmp_path / "imp.csv", [["ACC1", "2026-10-05", "X-1", "3", "1.250"]], delimiter="\t")
     guess = guess_output_template(path)

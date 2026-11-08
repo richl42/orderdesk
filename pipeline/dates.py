@@ -102,6 +102,18 @@ def _explicit_date(words: list[str], arrived: date) -> tuple[date | None, list[s
     return None, words
 
 
+def _weekday_and_day_number(weekday: int, rest: list[str], arrived: date) -> tuple[date | None, list[str]]:
+    """"Monday 16th" (no month): the next date after arrival that is that weekday and that day of the month."""
+    numbers = [w for w in rest if re.fullmatch(r"\d{1,2}", w) and 1 <= int(w) <= 31]
+    if len(numbers) != 1:
+        return None, rest
+    for ahead in range(1, 63):  # within two months: further off, it is not clear enough to pick
+        candidate = arrived + timedelta(days=ahead)
+        if candidate.weekday() == weekday and candidate.day == int(numbers[0]):
+            return candidate, [w for w in rest if w != numbers[0]]
+    return None, rest
+
+
 def resolve_delivery_date(raw: str | None, received_at: datetime) -> date | None:
     """The date a customer's wording means, or None when it is missing or not clear."""
     if not raw or not raw.strip():
@@ -122,6 +134,9 @@ def resolve_delivery_date(raw: str | None, received_at: datetime) -> date | None
     elif "tomorrow" in rest:
         relative = arrived + timedelta(days=1)
         rest.remove("tomorrow")
+
+    if found is None and len(weekdays) == 1:
+        found, rest = _weekday_and_day_number(weekdays[0], rest, arrived)
 
     if any(w not in FILLER for w in rest):
         return None  # words we don't understand: keep the raw wording, don't guess

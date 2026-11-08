@@ -128,6 +128,8 @@ def table_response(request: Request, session: Session, client: Client, section: 
     context = page_context(session, client)
     return templates.TemplateResponse(request, "setup/table.html", {
         **context, "s": section, "meta": TABLE_SECTIONS[section.kind], "oob": True,
+        # Saving the catalogue adds its units to the rules: refresh them so a later Save rules keeps them.
+        "refresh_rules": section.kind == MappingKind.CATALOGUE,
     })
 
 

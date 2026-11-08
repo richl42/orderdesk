@@ -15,7 +15,16 @@ from dataclasses import dataclass, field
 from rapidfuzz import fuzz
 
 from pipeline.ai import AI, ToolCall
-from pipeline.normalise import alias_phrase, basic, code_key, description_key, line_text, name_keys, strip_pack
+from pipeline.normalise import (
+    alias_phrase,
+    basic,
+    code_key,
+    description_key,
+    line_text,
+    name_keys,
+    singular,
+    strip_pack,
+)
 from pipeline.vocab import MatchMethod
 
 CANDIDATES_FOR_AI = 10
@@ -116,10 +125,23 @@ def phrase_for(line: LineIn, unit_words: set[str]) -> str:
                         unit_words=unit_words)
 
 
-def _words_without_codes(text: str, catalogue: Catalogue) -> str:
+QUANTITY_WORDS = {"x", "qty", "quantity", "of", "no"}
+
+
+def _is_quantity_or_unit(token: str, unit_words: set[str]) -> bool:
+    """A number, an 'x', or a unit word: not part of a product's name."""
+    key = basic(token)
+    return (not key or re.fullmatch(r"[\d.,]+", key) is not None or key in QUANTITY_WORDS
+            or key in unit_words or singular(key) in unit_words)
+
+
+def _words_without_codes(text: str, catalogue: Catalogue, unit_words: set[str]) -> str:
+    """What is left of a line once its codes, quantity and unit are taken away."""
+    unit_words = {singular(basic(w)) for w in unit_words} | {basic(w) for w in unit_words}
     tokens = [t for t in re.split(r"[\s|,;:()/]+", text) if t]
     kept = [t for t in tokens if catalogue.by_code.get(code_key(t)) is None
-            and catalogue.by_barcode.get(re.sub(r"\D", "", t) or "-") is None]
+            and catalogue.by_barcode.get(re.sub(r"\D", "", t) or "-") is None
+            and not _is_quantity_or_unit(t, unit_words)]
     return description_key(" ".join(kept))
 
 
@@ -145,7 +167,7 @@ def match_line(line: LineIn, customer_id: int | None, catalogue: Catalogue, alia
     if len(coded) == 1:
         item = coded[0]
         result.product_code, result.method = item.code, MatchMethod.EXACT_CODE
-        words = _words_without_codes(text, catalogue)
+        words = _words_without_codes(text, catalogue, unit_words)
         if len(re.sub(r"[^a-z]", "", words)) >= 4:
             agree = max(fuzz.token_set_ratio(words, item.name_key), fuzz.token_set_ratio(words, basic(item.description)))
             if agree < CODE_WORDS_AGREE:

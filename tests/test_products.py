@@ -62,6 +62,14 @@ def test_code_or_barcode_written_in_the_line():
     assert by_barcode.flags == []
 
 
+def test_a_code_with_only_a_quantity_and_unit_is_not_a_mismatch():
+    """"DG-407 x 1 each" says nothing about the product, so there is nothing to disagree with the code."""
+    for span, qty, unit in [("CLN-110 x 2 cases", "2", "cases"), ("CLN-110 - 3 case", "3", "case"),
+                            ("2 each CLN-110", "2", "each"), ("CLN-110 x 12 bottles", "12", "bottles")]:
+        result = match(span, qty, unit)
+        assert (result.product_code, result.flags) == ("CLN-110", []), span
+
+
 def test_a_code_with_words_for_a_different_product_is_a_check():
     result = match("CLN-110 blue nitrile gloves x 2", "2")
     assert result.product_code == "CLN-110"

@@ -154,9 +154,11 @@ def import_catalogue(session: Session, client: Client, path: Path, table: Table,
 
     synonyms = dict(client.unit_synonyms or DEFAULT_UNIT_SYNONYMS)
     for sell_unit in {item.sell_unit for item in items.values()}:
-        synonyms.setdefault(sell_unit, [sell_unit.lower()])
+        synonyms.setdefault(sell_unit, catalogue_unit_words(sell_unit))
     for inner in sorted(inner_units):
-        synonyms.setdefault(inner, sorted({inner, inner + "s"}))
+        # kg is both a sell unit (loose tomatoes) and the inner unit of a sack: one entry, not KG and kg.
+        if not any(unit.lower() == inner.lower() for unit in synonyms):
+            synonyms[inner] = catalogue_unit_words(inner)
     client.unit_synonyms = synonyms
     mark_setup_step(client, "catalogue")
     session.add(client)
@@ -254,6 +256,17 @@ def import_prices(session: Session, client: Client, path: Path, table: Table, ma
 
 
 # ---------------------------------------------------------------- output template
+
+
+# Other ways customers write a unit that the catalogue spells one way. Plurals are understood already.
+EXTRA_UNIT_WORDS = {"kg": ["kilo", "kilos", "kilogram", "kilograms", "kgs"],
+                    "litre": ["liter", "liters", "ltr", "ltrs", "l"]}
+
+
+def catalogue_unit_words(unit: str) -> list[str]:
+    """The words that mean a unit the catalogue uses (a sell unit such as SACK, or an inner unit such as bottle)."""
+    word = unit.lower()
+    return sorted({word, word + "s", *EXTRA_UNIT_WORDS.get(word, [])})
 
 
 def import_output_template(session: Session, client: Client, path: Path, filename: str | None = None,

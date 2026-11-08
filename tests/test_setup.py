@@ -225,3 +225,53 @@ def test_finish_lists_missing_steps(logged_in):
     response = logged_in.post("/clients/abccleaningsupplies/setup/finish")
     assert response.status_code == 422
     assert "Still to do before this client can take orders: Catalogue, Customers, Output format." in response.text
+
+
+# ---------------------------------------------------------------- units the catalogue brings (Harbourside practice client)
+
+
+def harbourside_catalogue(tmp_path):
+    from seed import trial_client
+
+    return trial_client.write_files(tmp_path / "hs")["products"]
+
+
+def test_catalogue_units_become_unit_words(logged_in, session, tmp_path):
+    from app.models import Client
+
+    path = harbourside_catalogue(tmp_path)
+    logged_in.post("/clients/new", data={"name": "Harbourside Foodservice", "erp_system": "Unleashed",
+                                         "mode": "trial"})
+    cid = "harboursidefoodservi"
+    upload = logged_in.post(f"/clients/{cid}/setup/files/catalogue/upload", headers={"HX-Request": "true"},
+                            files={"file": (path.name, path.read_bytes(), "application/octet-stream")})
+    saved = logged_in.post(f"/clients/{cid}/setup/files/catalogue/save", headers={"HX-Request": "true"},
+                           data=mapping_form(upload.text))
+    synonyms = session.get(Client, cid)
+    session.refresh(synonyms)
+    assert {"SACK", "BAG", "TRAY", "KG", "bottle", "tin"} <= set(synonyms.unit_synonyms)
+    assert "kilos" in synonyms.unit_synonyms["KG"] and "sack" in synonyms.unit_synonyms["SACK"]
+    # The rules section is refreshed with the new units, so saving it later keeps them.
+    assert 'id="sec-rules"' in saved.text and 'hx-swap-oob="true"' in saved.text and 'value="SACK"' in saved.text
+
+
+def test_saving_rules_from_a_stale_form_keeps_the_catalogue_units(logged_in, session, tmp_path):
+    from app.models import Client
+
+    path = harbourside_catalogue(tmp_path)
+    logged_in.post("/clients/new", data={"name": "Harbourside Foodservice", "erp_system": "Unleashed",
+                                         "mode": "trial"})
+    cid = "harboursidefoodservi"
+    upload = logged_in.post(f"/clients/{cid}/setup/files/catalogue/upload", headers={"HX-Request": "true"},
+                            files={"file": (path.name, path.read_bytes(), "application/octet-stream")})
+    logged_in.post(f"/clients/{cid}/setup/files/catalogue/save", headers={"HX-Request": "true"},
+                   data=mapping_form(upload.text))
+    # A rules form that was open before the catalogue was saved: only the four starting units.
+    stale = {"cutoff_time": "15:00", "minutes_per_order": "6", "duplicate_window_days": "7",
+             "unit_0": "CASE", "words_0": "case, cases", "unit_1": "BOX", "words_1": "box, boxes",
+             "unit_2": "PACK", "words_2": "pack, packs", "unit_3": "EACH", "words_3": "each, ea",
+             "unit_4": "", "words_4": ""}
+    logged_in.post(f"/clients/{cid}/setup/rules", headers={"HX-Request": "true"}, data=stale)
+    client = session.get(Client, cid)
+    session.refresh(client)
+    assert {"SACK", "BAG", "TRAY", "KG", "bottle"} <= set(client.unit_synonyms)

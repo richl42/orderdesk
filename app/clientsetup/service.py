@@ -661,6 +661,14 @@ def save_rules(session: Session, client: Client, form: dict) -> RulesForm:
             key = unit.upper() if unit.upper() in DEFAULT_UNIT_SYNONYMS or unit.isupper() else unit.lower()
             units[key] = sorted(set(words) | {unit.lower()})
         i += 1
+    # The units the catalogue uses can't be dropped: a form open since before the catalogue was saved
+    # would otherwise wipe them, and every line in that unit would then be a Problem.
+    kept = {k.lower(): k for k in units}
+    items = session.exec(select(CatalogueItem).where(CatalogueItem.client_id == client.id)).all()
+    for unit in [i.sell_unit for i in items] + [i.inner_unit for i in items]:  # sell units first: KG, not kg
+        if unit and unit.lower() not in kept:
+            units[unit] = (client.unit_synonyms or {}).get(unit) or importers.catalogue_unit_words(unit)
+            kept[unit.lower()] = unit
     owner: dict[str, str] = {}
     for unit, words in units.items():
         for word in words:

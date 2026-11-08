@@ -97,3 +97,11 @@ UNIT_WORDS = {w for words in SYNONYMS.values() for w in words}
 ])
 def test_quantity_must_sit_where_a_quantity_would(span, qty, ok):
     assert quantity_plausible(span, qty, UNIT_WORDS) is ok
+
+
+def test_plural_does_not_double_a_plural_the_customer_wrote():
+    from pipeline.units import plural
+
+    assert [plural("cases"), plural("case"), plural("bags"), plural("each"), plural("box"), plural("sacks")] == [
+        "cases", "cases", "bags", "each", "boxes", "sacks"]
+

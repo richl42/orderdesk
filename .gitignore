@@ -11,6 +11,8 @@ backups/
 
 # Demo files written by make seed
 seed/demo/
+seed/trial_client/
+seed/trial_client.zip
 
 # Python
 .venv/

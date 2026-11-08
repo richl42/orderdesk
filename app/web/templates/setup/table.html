@@ -85,3 +85,4 @@
     </form>
   {% endif %}
 </section>
+{% if refresh_rules and rules is defined %}{% with oob=False, oob_rules=True %}{% include "setup/rules.html" %}{% endwith %}{% endif %}

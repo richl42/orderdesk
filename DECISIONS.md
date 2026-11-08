@@ -169,3 +169,13 @@ Assumptions made while building, one line each. Agreed with Rich on 19 Oct 2026 
 - /healthz answers {"ok": true} without login, for the host's health check, and shows nothing else.
 - On a server, backups go to <DATA_DIR>/backups, and a backup never includes that folder.
 
+## Practice client (asked for by Rich, before real data)
+- seed/trial_client.py writes a second fake client, Harbourside Foodservice (food and catering: kg, sacks, trays, ISO-date import format, Unleashed), into seed/trial_client/ and seed/trial_client.zip: setup files, 18 test orders, a staff entries file with 3 planted differences, and READ_ME_FIRST.md. Nothing is loaded for you; you upload it through the screens, as with a real client. python -m seed.trial_client regenerates it.
+- Running it through the real app found five problems, all fixed:
+  - Saving Rules from a page that was open before the catalogue was saved wiped the units the catalogue brought (sack, bag, tray, kg), so nearly every line was a Problem. The catalogue save now refreshes the Rules section, and Save rules always keeps the units the catalogue uses.
+  - kg as both a sell unit and an inner unit made two entries (KG and kg); it is now one. Kilo, kilos, kilogram and kgs (and litre words) are understood.
+  - The output format guess did not know "Order Number" or "Order Quantity" headings, so the preview came out with blank columns.
+  - A line written as just a code, a quantity and a unit ("DG-407 x 1 each") was flagged as the words disagreeing with the code. Quantity, x and unit words are now ignored in that check.
+  - "Ordered in caseses": a unit written in the plural got a second s in the message.
+- "Monday 16th" (a weekday and a day number, no month) now gives a date: the next date within two months that is that weekday and that day. Beyond two months, or when they never line up ("Thursday 23rd" in a month where the 23rd is a Friday), it is still not clear and gives no date. This replaces the earlier rule that "Thursday 22nd" gives no date.
+

@@ -1,7 +1,7 @@
 {% from "setup/macros.html" import section_head, messages %}
 {% if oob %}{% include "setup/steps.html" %}{% endif %}
 {% set r = rules %}
-<section id="sec-rules" class="card setup-section">
+<section id="sec-rules" class="card setup-section"{% if oob_rules %} hx-swap-oob="true"{% endif %}>
   <a id="rules" class="anchor"></a>
   {{ section_head(5, "Rules", "When an order should be flagged instead of marked ready.", done="rules" in client.setup_done, optional=True) }}
   {{ messages(notice=r.notice) }}

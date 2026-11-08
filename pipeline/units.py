@@ -31,6 +31,8 @@ def plural(word: str, n: Decimal | int | None = None) -> str:
     word = word.lower()
     if word == "each" or (n is not None and Decimal(n) == 1):
         return word
+    if singular(word) != word:  # already written in the plural: "cases", not "caseses"
+        return word
     if word.endswith(("x", "s", "ch", "sh")):
         return word + "es"
     return word + "s"
