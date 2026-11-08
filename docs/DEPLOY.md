@@ -20,8 +20,8 @@ The reason is printed in the deploy log.
 ## Before either host
 
 1. Keep the GitHub repository **private**.
-2. Get the code onto the branch you deploy from. `render.yaml` uses `main`: merge the build branch into
-   `main`, or change `branch:` in `render.yaml`.
+2. Render deploys from the branch you pick when you create the Blueprint (today the build branch,
+   `claude/peaceful-dijkstra-q12575`; later `main`, once the work is merged).
 3. Choose a login password: four or five random words is good (at least 12 characters).
 4. In the Anthropic console, make an API key for the server only, and set a monthly spend limit.
 
@@ -44,7 +44,7 @@ A persistent disk needs a paid instance (Starter or above); the free plan has no
 6. Optional: your own address under **Settings > Custom Domains** (add the CNAME it shows; Render
    issues the HTTPS certificate).
 
-Updating: `autoDeploy` is off, so pushing does nothing by itself. Push to `main`, then
+Updating: `autoDeploy` is off, so pushing does nothing by itself. Push to the branch it deploys from, then
 **Manual Deploy > Deploy latest commit**. A service with a disk stops briefly while it restarts;
 deploy when you are not mid-review. Orders being read at that moment are picked up again on start.
 

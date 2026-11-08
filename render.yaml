@@ -6,7 +6,6 @@ services:
     runtime: python
     plan: starter            # a persistent disk needs a paid instance; the free plan has none
     region: frankfurt        # EU, for UK client data
-    branch: main             # change if you deploy from another branch
     buildCommand: pip install -r requirements.txt
     startCommand: python -m app.serve
     healthCheckPath: /healthz
